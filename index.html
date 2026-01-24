@@ -4,6 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>We Zien Wel</title>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDP7r5vwsOX3IqU2g_IilbCDl5sPepH_A0",
+            authDomain: "wezienwel.firebaseapp.com",
+            projectId: "wezienwel",
+            storageBucket: "wezienwel.firebasestorage.app",
+            messagingSenderId: "119572340376",
+            appId: "1:119572340376:web:4908690b8d488bf306baed"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
@@ -1168,15 +1187,27 @@
         let pendingPhotoData = null;
         let autoSlideInterval = null;
 
-        function loadPhotos() {
-            const saved = localStorage.getItem('wezienwel_photos_v1');
-            if (saved) {
-                photos = JSON.parse(saved);
+        async function loadPhotos() {
+            try {
+                const doc = await db.collection('wezienwel').doc('photos').get();
+                if (doc.exists) {
+                    photos = doc.data().list || [];
+                }
+            } catch (e) {
+                console.error('Error loading photos:', e);
+                // Fallback to localStorage
+                const saved = localStorage.getItem('wezienwel_photos_v1');
+                if (saved) photos = JSON.parse(saved);
             }
         }
 
-        function savePhotos() {
+        async function savePhotos() {
             localStorage.setItem('wezienwel_photos_v1', JSON.stringify(photos));
+            try {
+                await db.collection('wezienwel').doc('photos').set({ list: photos });
+            } catch (e) {
+                console.error('Error saving photos:', e);
+            }
         }
 
         function renderCarousel() {
@@ -1466,23 +1497,59 @@
         }
         function isWeekend(m, d) { const dt = new Date(2026, m, d); return dt.getDay() === 0 || dt.getDay() === 6; }
 
-        function init() {
+        async function init() {
             setInitialQuote();
-            loadPhotos();
+            await loadPhotos();
             renderCarousel();
-            loadData();
+            await loadData();
             render();
             setupEventListeners();
+
+            // Listen for real-time updates from other devices
+            db.collection('wezienwel').doc('bookings').onSnapshot((doc) => {
+                if (doc.exists) {
+                    const d = doc.data();
+                    couples = d.couples || [...DEFAULT_COUPLES];
+                    bookings = d.bookings || {};
+                    labels = d.labels || {};
+                    shownLevelUps = new Set(d.shownLevelUps || []);
+                    couples.forEach((_, i) => {
+                        if (!bookings[i]) bookings[i] = { tentative: [], locked: [] };
+                        if (!labels[i]) labels[i] = {};
+                    });
+                    render();
+                }
+            });
+
+            db.collection('wezienwel').doc('photos').onSnapshot((doc) => {
+                if (doc.exists) {
+                    photos = doc.data().list || [];
+                    renderCarousel();
+                }
+            });
         }
 
-        function loadData() {
-            const s = localStorage.getItem('wezienwel_light_v1');
-            if (s) {
-                const d = JSON.parse(s);
-                couples = d.couples || [...DEFAULT_COUPLES];
-                bookings = d.bookings || {};
-                labels = d.labels || {};
-                shownLevelUps = new Set(d.shownLevelUps || []);
+        async function loadData() {
+            try {
+                const doc = await db.collection('wezienwel').doc('bookings').get();
+                if (doc.exists) {
+                    const d = doc.data();
+                    couples = d.couples || [...DEFAULT_COUPLES];
+                    bookings = d.bookings || {};
+                    labels = d.labels || {};
+                    shownLevelUps = new Set(d.shownLevelUps || []);
+                }
+            } catch (e) {
+                console.error('Error loading data:', e);
+                // Fallback to localStorage
+                const s = localStorage.getItem('wezienwel_light_v1');
+                if (s) {
+                    const d = JSON.parse(s);
+                    couples = d.couples || [...DEFAULT_COUPLES];
+                    bookings = d.bookings || {};
+                    labels = d.labels || {};
+                    shownLevelUps = new Set(d.shownLevelUps || []);
+                }
             }
             couples.forEach((_, i) => {
                 if (!bookings[i]) bookings[i] = { tentative: [], locked: [] };
@@ -1490,10 +1557,16 @@
             });
         }
 
-        function saveData() {
-            localStorage.setItem('wezienwel_light_v1', JSON.stringify({
+        async function saveData() {
+            const data = {
                 couples, bookings, labels, shownLevelUps: [...shownLevelUps]
-            }));
+            };
+            localStorage.setItem('wezienwel_light_v1', JSON.stringify(data));
+            try {
+                await db.collection('wezienwel').doc('bookings').set(data);
+            } catch (e) {
+                console.error('Error saving data:', e);
+            }
         }
 
         function setupEventListeners() {
