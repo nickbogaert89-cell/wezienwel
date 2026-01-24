@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatWasGiven</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@200;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>We Zien Wel</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
         * {
             margin: 0;
             padding: 0;
@@ -16,517 +16,1777 @@
 
         body {
             font-family: 'Space Mono', monospace;
-            background: #0a0a0a;
+            background: #fff;
             min-height: 100vh;
-            color: #8a8a8a;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 60px 20px;
-            position: relative;
+            color: #000;
             overflow-x: hidden;
         }
 
-        /* VHS scan lines effect */
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(0, 0, 0, 0.15),
-                rgba(0, 0, 0, 0.15) 1px,
-                transparent 1px,
-                transparent 2px
-            );
-            pointer-events: none;
-            z-index: 1000;
-        }
-
-        /* Subtle noise texture */
-        body::after {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0.03;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-            pointer-events: none;
-            z-index: 999;
-        }
-
-        .container {
-            max-width: 700px;
-            width: 100%;
+        /* Hero Section with Panorama */
+        .hero {
             position: relative;
-            z-index: 1;
+            height: 45vh;
+            min-height: 280px;
+            overflow: hidden;
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        .kanji {
-            font-family: 'Noto Serif JP', serif;
-            font-size: 1rem;
-            font-weight: 200;
-            color: #3a3a3a;
-            letter-spacing: 0.5em;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            font-size: 2.2rem;
-            font-weight: 400;
-            letter-spacing: 0.15em;
-            margin-bottom: 30px;
-            color: #c0c0c0;
-            text-transform: uppercase;
-        }
-
-        .tagline {
-            font-size: 0.85rem;
-            font-weight: 400;
-            color: #505050;
-            letter-spacing: 0.05em;
-            line-height: 1.8;
-        }
-
-        .tagline-jp {
-            font-family: 'Noto Serif JP', serif;
-            font-size: 0.9rem;
-            color: #3a3a3a;
-            margin-top: 12px;
-            font-weight: 200;
-        }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            margin: 50px 0;
-            color: #2a2a2a;
-        }
-
-        .divider-line {
-            width: 80px;
-            height: 1px;
-            background: #2a2a2a;
-        }
-
-        .divider-symbol {
-            font-family: 'Noto Serif JP', serif;
-            font-size: 1.2rem;
-        }
-
-        .projects {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .project-link {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            padding: 25px 20px;
-            background: transparent;
-            border: 1px solid #1a1a1a;
-            text-decoration: none;
-            color: #707070;
-            transition: all 0.4s ease;
-            cursor: pointer;
-        }
-
-        .project-link:hover {
-            background: #0f0f0f;
-            border-color: #2a2a2a;
-            color: #909090;
-        }
-
-        .project-number {
-            font-size: 0.7rem;
-            color: #3a3a3a;
-            min-width: 30px;
-        }
-
-        .project-info {
-            flex: 1;
-        }
-
-        .project-name {
-            font-size: 0.95rem;
-            font-weight: 400;
-            margin-bottom: 4px;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        .project-desc {
-            font-size: 0.75rem;
-            color: #404040;
-            letter-spacing: 0.02em;
-        }
-
-        .project-jp {
-            font-family: 'Noto Serif JP', serif;
-            font-size: 0.8rem;
-            color: #2a2a2a;
-            margin-left: auto;
-            font-weight: 200;
-        }
-
-        .lock-icon {
-            width: 14px;
-            height: 14px;
-            fill: #3a3a3a;
-            margin-left: 10px;
-        }
-
-        footer {
-            margin-top: 80px;
-            text-align: center;
-        }
-
-        .footer-jp {
-            font-family: 'Noto Serif JP', serif;
-            font-size: 0.85rem;
-            color: #2a2a2a;
-            margin-bottom: 15px;
-            font-weight: 200;
-        }
-
-        .river-ref {
-            font-size: 0.7rem;
-            color: #353535;
-            letter-spacing: 0.1em;
-        }
-
-        .river-ref a {
-            color: #454545;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .river-ref a:hover {
-            color: #656565;
-        }
-
-        /* Password Modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
+        .panorama-container {
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 2000;
+            display: flex;
+            transition: transform 0.8s ease-in-out;
+        }
+
+        .panorama-container.animating {
+            transition: transform 0.8s ease-in-out;
+        }
+
+        .panorama-slide {
+            min-width: 100%;
+            height: 100%;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .panorama-slide.empty-state {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        .modal-overlay.active {
+        .empty-state-content {
+            text-align: center;
+            color: rgba(0,0,0,0.4);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .empty-state-content p {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .panorama-img {
+            height: 100%;
+            width: 100%;
+            object-fit: cover;
+            filter: grayscale(100%) contrast(1.1);
+        }
+
+        .panorama-location {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            padding: 8px 16px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            backdrop-filter: blur(4px);
+        }
+
+        .panorama-delete {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            color: #fff;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .panorama-slide:hover .panorama-delete {
+            opacity: 1;
+        }
+
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.8);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            z-index: 20;
+            transition: all 0.2s;
+        }
+
+        .carousel-nav:hover {
+            background: #fff;
+        }
+
+        .carousel-nav.prev { left: 20px; }
+        .carousel-nav.next { right: 20px; }
+
+        .carousel-dots {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 20;
+        }
+
+        .carousel-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .carousel-dot.active {
+            background: rgba(0,0,0,0.8);
+            transform: scale(1.2);
+        }
+
+        .upload-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(0,0,0,0.2);
+            padding: 10px 16px;
+            font-family: inherit;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            z-index: 20;
+            transition: all 0.2s;
+        }
+
+        .upload-btn:hover {
+            background: #fff;
+            border-color: rgba(0,0,0,0.4);
+        }
+
+        /* Upload Modal */
+        .upload-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-modal.active {
             display: flex;
         }
 
-        .modal {
-            background: #0a0a0a;
-            border: 1px solid #1a1a1a;
+        .upload-modal-content {
+            background: #fff;
             padding: 40px;
-            max-width: 400px;
+            max-width: 500px;
             width: 90%;
             text-align: center;
         }
 
-        .modal-title {
-            font-family: 'Noto Serif JP', serif;
-            font-size: 1.2rem;
-            color: #3a3a3a;
-            margin-bottom: 10px;
-            font-weight: 200;
-        }
-
-        .modal-subtitle {
-            font-size: 0.8rem;
-            color: #505050;
-            margin-bottom: 30px;
-            letter-spacing: 0.1em;
+        .upload-modal h3 {
+            font-size: 1rem;
             text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 24px;
         }
 
-        .modal input {
-            width: 100%;
-            padding: 15px;
-            background: #050505;
-            border: 1px solid #1a1a1a;
-            color: #808080;
-            font-family: 'Space Mono', monospace;
-            font-size: 0.85rem;
-            letter-spacing: 0.2em;
-            text-align: center;
-            outline: none;
-            transition: border-color 0.3s ease;
-        }
-
-        .modal input:focus {
-            border-color: #2a2a2a;
-        }
-
-        .modal input::placeholder {
-            color: #2a2a2a;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .modal-btn {
-            flex: 1;
-            padding: 12px;
-            background: transparent;
-            border: 1px solid #1a1a1a;
-            color: #505050;
-            font-family: 'Space Mono', monospace;
-            font-size: 0.75rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
+        .upload-dropzone {
+            border: 2px dashed rgba(0,0,0,0.3);
+            padding: 40px;
+            margin-bottom: 20px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
         }
 
-        .modal-btn:hover {
-            background: #0f0f0f;
-            border-color: #2a2a2a;
-            color: #707070;
+        .upload-dropzone:hover, .upload-dropzone.dragover {
+            border-color: #000;
+            background: rgba(0,0,0,0.05);
         }
 
-        .modal-error {
-            color: #5a3a3a;
+        .upload-dropzone p {
             font-size: 0.75rem;
-            margin-top: 15px;
+            color: rgba(0,0,0,0.6);
+        }
+
+        .upload-preview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-bottom: 20px;
+            filter: grayscale(100%);
             display: none;
         }
 
-        .modal-error.active {
+        .upload-preview.show {
             display: block;
         }
 
-        .glitch {
-            animation: glitch 0.3s infinite;
+        .location-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(0,0,0,0.2);
+            font-family: inherit;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            text-align: center;
         }
 
-        @keyframes glitch {
-            0% { transform: translate(0); }
-            20% { transform: translate(-1px, 1px); }
-            40% { transform: translate(1px, -1px); }
-            60% { transform: translate(-1px, -1px); }
-            80% { transform: translate(1px, 1px); }
-            100% { transform: translate(0); }
+        .location-input:focus {
+            outline: none;
+            border-color: #000;
         }
 
-        @media (max-width: 600px) {
-            h1 {
+        .upload-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .upload-actions button {
+            padding: 12px 24px;
+            font-family: inherit;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel {
+            background: transparent;
+            border: 1px solid rgba(0,0,0,0.3);
+        }
+
+        .btn-cancel:hover {
+            border-color: #000;
+        }
+
+        .btn-save {
+            background: #000;
+            color: #fff;
+            border: 1px solid #000;
+        }
+
+        .btn-save:hover {
+            background: #333;
+        }
+
+        .btn-save:disabled {
+            background: rgba(0,0,0,0.3);
+            border-color: rgba(0,0,0,0.3);
+            cursor: not-allowed;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom,
+                rgba(255,255,255,0.3) 0%,
+                rgba(255,255,255,0.1) 40%,
+                rgba(255,255,255,0.6) 80%,
+                rgba(255,255,255,1) 100%);
+        }
+
+        .hero-content {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            right: 40px;
+        }
+
+        .title {
+            font-size: clamp(2rem, 5.5vw, 4rem);
+            font-weight: 400;
+            letter-spacing: 0.15em;
+            margin-bottom: 16px;
+            text-transform: lowercase;
+            font-style: italic;
+            opacity: 0.9;
+            color: #000;
+        }
+
+        .quote {
+            font-size: clamp(0.7rem, 2vw, 0.85rem);
+            color: rgba(0,0,0,0.5);
+            max-width: 500px;
+            line-height: 1.6;
+            font-style: italic;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .quote:hover {
+            color: rgba(0,0,0,0.7);
+        }
+
+        .quote.exhausted {
+            cursor: default;
+            color: rgba(0,0,0,0.2);
+        }
+
+        /* Main Content */
+        .main {
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(0,0,0,0.15);
+            flex-wrap: wrap;
+        }
+
+        .stat-group {
+            cursor: pointer;
+            opacity: 0.4;
+            transition: opacity 0.3s;
+            min-width: 100px;
+            flex: 1;
+        }
+
+        .stat-group:hover {
+            opacity: 0.7;
+        }
+
+        .stat-group.active {
+            opacity: 1;
+        }
+
+        .stat-name {
+            font-size: clamp(0.55rem, 1.5vw, 0.75rem);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(0,0,0,0.7);
+            margin-bottom: 8px;
+            cursor: text;
+            word-break: break-word;
+        }
+
+        .stat-name-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(0,0,0,0.3);
+            color: #000;
+            font-family: inherit;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            outline: none;
+            width: 100%;
+            max-width: 140px;
+        }
+
+        .stat-numbers {
+            display: flex;
+            gap: 12px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-value {
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 0.45rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(0,0,0,0.4);
+        }
+
+        /* Calendar */
+        .calendar-section {
+            margin-bottom: 48px;
+        }
+
+        .timeline {
+            overflow-x: auto;
+            padding-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .timeline::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .timeline::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+
+        .timeline::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.3);
+        }
+
+        .timeline-inner {
+            min-width: max-content;
+        }
+
+        .month-headers {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .month-headers-spacer {
+            width: 90px;
+            flex-shrink: 0;
+            position: sticky;
+            left: 0;
+            background: #fff;
+            z-index: 10;
+        }
+
+        .month-header {
+            font-size: 0.55rem;
+            color: rgba(0,0,0,0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .couple-section {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .couple-name {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+            color: rgba(0,0,0,0.5);
+            cursor: pointer;
+            position: sticky;
+            left: 0;
+            background: #fff;
+            padding-right: 10px;
+            z-index: 10;
+            width: fit-content;
+        }
+
+        .couple-name:hover {
+            color: rgba(0,0,0,0.7);
+        }
+
+        .couple-section.active .couple-name {
+            color: #000;
+        }
+
+        .couple-stats-inline {
+            display: none;
+        }
+
+        .couple-name-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(0,0,0,0.5);
+            color: #000;
+            font-family: inherit;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            outline: none;
+            width: 160px;
+        }
+
+        .timeline-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+
+        .row-label {
+            width: 90px;
+            font-size: 0.45rem;
+            color: rgba(0,0,0,0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-right: 10px;
+            text-align: right;
+            flex-shrink: 0;
+            position: sticky;
+            left: 0;
+            background: #fff;
+            z-index: 10;
+        }
+
+        .days-container {
+            display: flex;
+            gap: 1px;
+            user-select: none;
+        }
+
+        .day-cell {
+            width: 10px;
+            height: 14px;
+            background: rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: all 0.1s;
+            position: relative;
+            border-radius: 1px;
+        }
+
+        .day-cell:hover {
+            background: rgba(0,0,0,0.25);
+        }
+
+        .day-cell.weekend {
+            background: rgba(0,0,0,0.15);
+        }
+
+        .day-cell.holiday {
+            background: rgba(200,150,50,0.35);
+        }
+
+        .day-cell.weekend.holiday {
+            background: rgba(200,150,50,0.4);
+        }
+
+        .day-cell.school-holiday {
+            background: rgba(100,180,100,0.3);
+        }
+
+        .day-cell.weekend.school-holiday {
+            background: rgba(100,180,100,0.4);
+        }
+
+        .day-cell.holiday.school-holiday {
+            background: linear-gradient(135deg, rgba(200,150,50,0.35) 50%, rgba(100,180,100,0.35) 50%);
+        }
+
+        .day-cell.tentative {
+            background: #000;
+        }
+
+        .day-cell.locked {
+            background: #000;
+        }
+
+        .day-cell.past {
+            opacity: 0.35;
+        }
+
+        .day-cell.today {
+            box-shadow: inset 0 0 0 2px rgba(0,0,0,0.8);
+        }
+
+        .day-cell.drag-selecting {
+            background: rgba(0,0,0,0.5) !important;
+            box-shadow: 0 0 6px rgba(0,0,0,0.5);
+        }
+
+        /* DOS-style Label row - single continuous input */
+        .label-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            min-height: 20px;
+            margin-top: 2px;
+        }
+
+        .label-input-container {
+            margin-left: 90px;
+            background: rgba(240,240,250,0.9);
+            border: 1px solid rgba(0,0,0,0.15);
+            width: calc(365 * 11px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .label-full-input {
+            width: 100%;
+            height: 20px;
+            background: transparent;
+            border: none;
+            font-family: 'VT323', monospace;
+            font-size: 13px;
+            color: rgba(0,0,0,0.9);
+            outline: none;
+            letter-spacing: 6.05px;
+            padding: 2px 0 2px 2px;
+            text-transform: uppercase;
+        }
+
+        .label-full-input::placeholder {
+            color: rgba(0,0,0,0.15);
+            letter-spacing: normal;
+        }
+
+        .label-full-input:focus {
+            color: #000;
+        }
+
+        /* Tooltip - follows cursor above */
+        .tooltip {
+            position: fixed;
+            background: #000;
+            color: #fff;
+            padding: 6px 10px;
+            font-size: 0.6rem;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+            white-space: nowrap;
+            transform: translateX(-50%);
+        }
+
+        .tooltip-date {
+            font-weight: 700;
+        }
+
+        .tooltip-label {
+            color: rgba(255,255,255,0.6);
+            margin-top: 2px;
+        }
+
+        .tooltip-holiday {
+            color: rgba(255,200,100,1);
+            font-size: 0.55rem;
+            margin-top: 2px;
+        }
+
+        .tooltip-school-holiday {
+            color: rgba(150,255,150,1);
+            font-size: 0.55rem;
+            margin-top: 2px;
+        }
+
+        /* Level Up Easter Egg - Van Donuts Style */
+        .level-up-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.95);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .level-up-overlay.active {
+            display: flex;
+        }
+
+        .van-scene {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .donut-track {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120px;
+            height: 120px;
+            transform: translate(-50%, -50%);
+            border: 3px dashed rgba(0,0,0,0.2);
+            border-radius: 50%;
+        }
+
+        .van {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            font-size: 32px;
+            transform-origin: center center;
+            opacity: 0;
+        }
+
+        .van.spinning {
+            animation: vanDonut 2.5s ease-in-out forwards;
+        }
+
+        @keyframes vanDonut {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) rotate(0deg) translateX(60px) rotate(0deg);
+            }
+            15% {
+                transform: translate(-50%, -50%) rotate(180deg) translateX(60px) rotate(-180deg);
+            }
+            30% {
+                transform: translate(-50%, -50%) rotate(360deg) translateX(60px) rotate(-360deg);
+            }
+            45% {
+                transform: translate(-50%, -50%) rotate(540deg) translateX(60px) rotate(-540deg);
+            }
+            60% {
+                transform: translate(-50%, -50%) rotate(720deg) translateX(60px) rotate(-720deg);
+            }
+            75% {
+                transform: translate(-50%, -50%) rotate(900deg) translateX(60px) rotate(-900deg);
+            }
+            90% {
+                transform: translate(-50%, -50%) rotate(1080deg) translateX(60px) rotate(-1080deg);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) rotate(1080deg) translateX(60px) rotate(-1080deg);
+            }
+        }
+
+        .tire-marks {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 110px;
+            height: 110px;
+            transform: translate(-50%, -50%);
+            border: 4px solid transparent;
+            border-radius: 50%;
+            opacity: 0;
+        }
+
+        .tire-marks.show {
+            animation: tireMarks 2s ease-out forwards;
+        }
+
+        @keyframes tireMarks {
+            0% { opacity: 0; border-color: transparent; }
+            20% { opacity: 0.6; border-color: rgba(0,0,0,0.3); }
+            100% { opacity: 0.3; border-color: rgba(0,0,0,0.15); }
+        }
+
+        .dust-cloud {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            opacity: 0;
+        }
+
+        .dust-cloud.puff {
+            animation: dustPuff 0.8s ease-out forwards;
+        }
+
+        @keyframes dustPuff {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            30% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
+        }
+
+        .level-up-text {
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 16px;
+            opacity: 0;
+            color: #000;
+        }
+
+        .level-up-text.show {
+            animation: textFadeIn 0.4s ease-out 0.9s forwards;
+        }
+
+        @keyframes textFadeIn {
+            to { opacity: 1; }
+        }
+
+        .level-up-date {
+            font-size: 0.75rem;
+            color: rgba(0,0,0,0.6);
+            margin-top: 10px;
+            opacity: 0;
+        }
+
+        .level-up-date.show {
+            animation: textFadeIn 0.4s ease-out 1.1s forwards;
+        }
+
+        /* Mobile styles */
+        @media (max-width: 768px) {
+            .hero {
+                height: 25vh;
+                min-height: 140px;
+            }
+
+            .hero-content {
+                left: 16px;
+                right: 16px;
+                bottom: 12px;
+            }
+
+            .title {
                 font-size: 1.6rem;
+                margin-bottom: 6px;
             }
 
-            .project-link {
-                padding: 20px 15px;
+            .quote {
+                font-size: 0.6rem;
             }
 
-            .project-jp {
+            .carousel-nav {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+
+            .carousel-nav.prev { left: 8px; }
+            .carousel-nav.next { right: 8px; }
+
+            .carousel-dots {
+                bottom: 50px;
+            }
+
+            .carousel-dot {
+                width: 6px;
+                height: 6px;
+            }
+
+            .upload-btn {
+                top: 10px;
+                left: 10px;
+                padding: 6px 10px;
+                font-size: 0.5rem;
+            }
+
+            .panorama-location {
+                font-size: 0.5rem;
+                padding: 4px 10px;
+                bottom: 10px;
+                right: 10px;
+            }
+
+            .panorama-delete {
+                opacity: 0.7;
+                width: 24px;
+                height: 24px;
+                font-size: 12px;
+            }
+
+            .upload-modal-content {
+                padding: 24px;
+            }
+
+            .upload-dropzone {
+                padding: 24px;
+            }
+
+            .main {
+                padding: 12px;
+            }
+
+            .stats-row {
                 display: none;
             }
+
+            .stat-group {
+                min-width: 90px;
+            }
+
+            .stat-numbers {
+                gap: 8px;
+            }
+
+            .stat-value {
+                font-size: 1.1rem;
+            }
+
+            .stat-label {
+                font-size: 0.35rem;
+            }
+
+            .stat-name {
+                font-size: 0.5rem;
+            }
+
+            .day-cell {
+                width: 6px;
+                height: 10px;
+            }
+
+            .row-label {
+                width: 55px;
+                font-size: 0.32rem;
+                padding-right: 4px;
+            }
+
+            .month-headers {
+                display: none;
+            }
+
+            .month-headers-spacer {
+                width: 55px;
+            }
+
+            .mobile-month-nav {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 20px;
+                margin-bottom: 16px;
+                padding: 8px 0;
+            }
+
+            .mobile-month-nav button {
+                background: transparent;
+                border: 1px solid rgba(0,0,0,0.3);
+                color: #000;
+                width: 36px;
+                height: 36px;
+                font-size: 1.2rem;
+                cursor: pointer;
+                border-radius: 50%;
+            }
+
+            .mobile-month-nav button:active {
+                background: rgba(0,0,0,0.1);
+            }
+
+            .mobile-month-name {
+                font-size: 0.9rem;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                min-width: 80px;
+                text-align: center;
+            }
+
+            .label-input-container {
+                margin-left: 55px;
+                width: calc(365 * 7px);
+            }
+
+            .label-full-input {
+                letter-spacing: 2.1px;
+                font-size: 10px;
+                height: 16px;
+            }
+
+            .month-header {
+                font-size: 0.35rem;
+            }
+
+            .couple-name {
+                font-size: 0.5rem;
+            }
+
+            .couple-stats-inline {
+                display: inline;
+                font-size: 0.45rem;
+                color: rgba(0,0,0,0.5);
+                margin-left: 8px;
+            }
+
+            .couple-section.active .couple-stats-inline {
+                color: rgba(0,0,0,0.7);
+            }
+
+            .timeline {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .timeline-inner {
+                transition: none;
+            }
+
+            .label-row {
+                display: none;
+            }
+        }
+
+        .mobile-month-nav {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <p class="kanji">与えられたもの</p>
-            <h1>WhatWasGiven</h1>
-            <p class="tagline">"all we wanted out of life was what was given"</p>
-            <p class="tagline-jp">人生に求めたのは、与えられたものだけだった</p>
-        </header>
-
-        <div class="divider">
-            <span class="divider-line"></span>
-            <span class="divider-symbol">無</span>
-            <span class="divider-line"></span>
+    <div class="hero">
+        <div class="panorama-container" id="carouselContainer"></div>
+        <button class="carousel-nav prev" onclick="prevSlide()">←</button>
+        <button class="carousel-nav next" onclick="nextSlide()">→</button>
+        <div class="carousel-dots" id="carouselDots"></div>
+        <button class="upload-btn" onclick="openUploadModal()">+ Foto toevoegen</button>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1 class="title">We Zien Wel</h1>
+            <p class="quote" id="dailyQuote" onclick="cycleQuote()"></p>
         </div>
-
-        <nav class="projects">
-            <!-- Project 1 -->
-            <div class="project-link" data-url="https://github.com/whatwasgiven/project-one" data-protected="false">
-                <span class="project-number">01</span>
-                <div class="project-info">
-                    <div class="project-name">Project One</div>
-                    <div class="project-desc">Description of your first project</div>
-                </div>
-                <span class="project-jp">一</span>
-            </div>
-
-            <!-- Project 2 -->
-            <div class="project-link" data-url="https://github.com/whatwasgiven/project-two" data-protected="false">
-                <span class="project-number">02</span>
-                <div class="project-info">
-                    <div class="project-name">Project Two</div>
-                    <div class="project-desc">Description of your second project</div>
-                </div>
-                <span class="project-jp">二</span>
-            </div>
-
-            <!-- Project 3 -->
-            <div class="project-link" data-url="https://github.com/whatwasgiven/project-three" data-protected="false">
-                <span class="project-number">03</span>
-                <div class="project-info">
-                    <div class="project-name">Project Three</div>
-                    <div class="project-desc">Description of your third project</div>
-                </div>
-                <span class="project-jp">三</span>
-            </div>
-        </nav>
-
-        <footer>
-            <p class="footer-jp">川の流れのように</p>
-            <p class="river-ref">
-                <a href="https://www.youtube.com/watch?v=AT5VGqleIAs" target="_blank" rel="noopener">The River</a> — Atmosphere
-            </p>
-        </footer>
     </div>
 
-    <!-- Password Modal -->
-    <div class="modal-overlay" id="passwordModal">
-        <div class="modal">
-            <p class="modal-title">鍵</p>
-            <p class="modal-subtitle">Password Required</p>
-            <input type="password" id="passwordInput" placeholder="・・・・・・" autocomplete="off">
-            <p class="modal-error" id="modalError">incorrect password</p>
-            <div class="modal-buttons">
-                <button class="modal-btn" id="cancelBtn">Cancel</button>
-                <button class="modal-btn" id="submitBtn">Enter</button>
+    <!-- Upload Modal -->
+    <div class="upload-modal" id="uploadModal">
+        <div class="upload-modal-content">
+            <h3>Foto toevoegen</h3>
+            <div class="upload-dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+                <p>Klik of sleep een foto hierheen</p>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileSelect(event)">
+            <img class="upload-preview" id="uploadPreview" alt="Preview">
+            <input type="text" class="location-input" id="locationInput" placeholder="Locatie (bv. Dolomites, Italy)">
+            <div class="upload-actions">
+                <button class="btn-cancel" onclick="closeUploadModal()">Annuleren</button>
+                <button class="btn-save" id="btnSave" onclick="savePhoto()" disabled>Opslaan</button>
             </div>
         </div>
+    </div>
+
+    <div class="main" id="mainContent">
+        <div class="stats-row" id="statsRow"></div>
+
+        <div class="calendar-section">
+            <div class="mobile-month-nav" id="mobileMonthNav">
+                <button onclick="prevMonth()">←</button>
+                <span class="mobile-month-name" id="mobileMonthName">Jan</span>
+                <button onclick="nextMonth()">→</button>
+            </div>
+            <div class="timeline">
+                <div class="timeline-inner" id="timeline"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="level-up-overlay" id="levelUpOverlay" onclick="closeLevelUp()">
+        <div class="van-scene">
+            <div class="donut-track"></div>
+            <div class="tire-marks" id="tireMarks"></div>
+            <div class="dust-cloud" id="dustCloud">💨</div>
+            <div class="van" id="van">🚐</div>
+        </div>
+        <div class="level-up-text" id="levelUpText">Iedereen mee!</div>
+        <div class="level-up-date" id="levelUpDate"></div>
+    </div>
+
+    <div class="tooltip" id="tooltip">
+        <div class="tooltip-date" id="tooltipDate"></div>
+        <div class="tooltip-label" id="tooltipLabel"></div>
+        <div class="tooltip-holiday" id="tooltipHoliday"></div>
+        <div class="tooltip-school-holiday" id="tooltipSchoolHoliday"></div>
     </div>
 
     <script>
-        /*
-         * PASSWORD CONFIGURATION
-         * ----------------------
-         * To enable password protection for a project:
-         * 1. Set data-protected="true" on the project-link div
-         * 2. Add the password to the passwords object below
-         *
-         * Example:
-         *   passwords: {
-         *       'https://github.com/whatwasgiven/project-one': 'secretpass123',
-         *       'https://github.com/whatwasgiven/project-two': 'anotherpassword',
-         *   }
-         *
-         * Then change the corresponding project-link to:
-         *   data-protected="true"
-         *
-         * A lock icon will appear automatically on protected links.
-         */
+        let audioCtx = null;
 
-        const config = {
-            passwords: {
-                // 'https://github.com/whatwasgiven/project-one': 'your-password-here',
-                // 'https://github.com/whatwasgiven/project-two': 'your-password-here',
-                // 'https://github.com/whatwasgiven/project-three': 'your-password-here',
+        function playHonkSound() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            // Car horn sound
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.type = 'sawtooth';
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+
+            // Second honk
+            setTimeout(() => {
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.connect(gain2); gain2.connect(audioCtx.destination);
+                osc2.frequency.setValueAtTime(450, audioCtx.currentTime);
+                osc2.type = 'sawtooth';
+                gain2.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc2.start(); osc2.stop(audioCtx.currentTime + 0.4);
+            }, 350);
+        }
+
+        function playTireSound() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            // Tire screech noise
+            const bufferSize = audioCtx.sampleRate * 0.8;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
             }
-        };
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 2000;
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            noise.start();
+        }
+    </script>
 
-        // DOM Elements
-        const modal = document.getElementById('passwordModal');
-        const passwordInput = document.getElementById('passwordInput');
-        const modalError = document.getElementById('modalError');
-        const cancelBtn = document.getElementById('cancelBtn');
-        const submitBtn = document.getElementById('submitBtn');
-        const projectLinks = document.querySelectorAll('.project-link');
+    <script>
+        // Photo Carousel System
+        let photos = [];
+        let currentSlide = 0;
+        let pendingPhotoData = null;
+        let autoSlideInterval = null;
 
-        let currentUrl = '';
-
-        // Add lock icons to protected links
-        projectLinks.forEach(link => {
-            if (link.dataset.protected === 'true') {
-                const lockSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                lockSvg.setAttribute('class', 'lock-icon');
-                lockSvg.setAttribute('viewBox', '0 0 24 24');
-                lockSvg.innerHTML = '<path d="M18 10V8c0-3.3-2.7-6-6-6S6 4.7 6 8v2H4v14h16V10h-2zm-9-2c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9V8zm8 12H7V12h10v8z"/>';
-                link.appendChild(lockSvg);
-            }
-        });
-
-        // Handle project link clicks
-        projectLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                const url = link.dataset.url;
-                const isProtected = link.dataset.protected === 'true';
-
-                if (isProtected) {
-                    currentUrl = url;
-                    modal.classList.add('active');
-                    passwordInput.value = '';
-                    modalError.classList.remove('active');
-                    setTimeout(() => passwordInput.focus(), 100);
-                } else {
-                    window.open(url, '_blank');
-                }
-            });
-        });
-
-        // Cancel button
-        cancelBtn.addEventListener('click', () => {
-            modal.classList.remove('active');
-            currentUrl = '';
-        });
-
-        // Submit password
-        submitBtn.addEventListener('click', checkPassword);
-        passwordInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') checkPassword();
-        });
-
-        function checkPassword() {
-            const entered = passwordInput.value;
-            const correct = config.passwords[currentUrl];
-
-            if (entered === correct) {
-                modal.classList.remove('active');
-                window.open(currentUrl, '_blank');
-                currentUrl = '';
-            } else {
-                modalError.classList.add('active');
-                passwordInput.classList.add('glitch');
-                setTimeout(() => passwordInput.classList.remove('glitch'), 300);
+        function loadPhotos() {
+            const saved = localStorage.getItem('wezienwel_photos_v1');
+            if (saved) {
+                photos = JSON.parse(saved);
             }
         }
 
-        // Close modal on overlay click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.remove('active');
-                currentUrl = '';
-            }
-        });
+        function savePhotos() {
+            localStorage.setItem('wezienwel_photos_v1', JSON.stringify(photos));
+        }
 
-        // Close modal on Escape
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && modal.classList.contains('active')) {
-                modal.classList.remove('active');
-                currentUrl = '';
+        function renderCarousel() {
+            const container = document.getElementById('carouselContainer');
+            const dotsContainer = document.getElementById('carouselDots');
+
+            if (photos.length === 0) {
+                // Empty state - prompt to upload
+                container.innerHTML = `
+                    <div class="panorama-slide empty-state">
+                        <div class="empty-state-content">
+                            <div class="empty-state-icon">📷</div>
+                            <p>Voeg je eerste foto toe</p>
+                        </div>
+                    </div>
+                `;
+                dotsContainer.innerHTML = '';
+                return;
             }
+
+            container.innerHTML = photos.map((p, i) => `
+                <div class="panorama-slide">
+                    <img src="${p.src}" class="panorama-img" alt="${p.location}">
+                    <div class="panorama-location">${p.location}</div>
+                    <button class="panorama-delete" onclick="deletePhoto(${i}, event)">×</button>
+                </div>
+            `).join('');
+
+            dotsContainer.innerHTML = photos.map((_, i) => `
+                <div class="carousel-dot ${i === currentSlide ? 'active' : ''}" onclick="goToSlide(${i})"></div>
+            `).join('');
+
+            updateCarouselPosition();
+            startAutoSlide();
+        }
+
+        function updateCarouselPosition() {
+            const container = document.getElementById('carouselContainer');
+            container.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+            document.querySelectorAll('.carousel-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === currentSlide);
+            });
+        }
+
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % photos.length;
+            updateCarouselPosition();
+            resetAutoSlide();
+        }
+
+        function prevSlide() {
+            currentSlide = (currentSlide - 1 + photos.length) % photos.length;
+            updateCarouselPosition();
+            resetAutoSlide();
+        }
+
+        function goToSlide(i) {
+            currentSlide = i;
+            updateCarouselPosition();
+            resetAutoSlide();
+        }
+
+        function startAutoSlide() {
+            if (autoSlideInterval) clearInterval(autoSlideInterval);
+            autoSlideInterval = setInterval(nextSlide, 6000);
+        }
+
+        function resetAutoSlide() {
+            startAutoSlide();
+        }
+
+        function deletePhoto(index, e) {
+            e.stopPropagation();
+            if (photos.length <= 1) {
+                alert('Je moet minstens één foto hebben!');
+                return;
+            }
+            photos.splice(index, 1);
+            if (currentSlide >= photos.length) currentSlide = photos.length - 1;
+            savePhotos();
+            renderCarousel();
+        }
+
+        // Upload Modal
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.add('active');
+            document.getElementById('uploadPreview').classList.remove('show');
+            document.getElementById('locationInput').value = '';
+            document.getElementById('btnSave').disabled = true;
+            pendingPhotoData = null;
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('active');
+            pendingPhotoData = null;
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            processFile(file);
+        }
+
+        function processFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Selecteer een afbeelding');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                pendingPhotoData = e.target.result;
+                const preview = document.getElementById('uploadPreview');
+                preview.src = pendingPhotoData;
+                preview.classList.add('show');
+                checkSaveEnabled();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function checkSaveEnabled() {
+            const hasPhoto = pendingPhotoData !== null;
+            const hasLocation = document.getElementById('locationInput').value.trim().length > 0;
+            document.getElementById('btnSave').disabled = !(hasPhoto && hasLocation);
+        }
+
+        function savePhoto() {
+            const location = document.getElementById('locationInput').value.trim();
+            if (!pendingPhotoData || !location) return;
+
+            photos.unshift({
+                src: pendingPhotoData,
+                location: location
+            });
+
+            currentSlide = 0;
+            savePhotos();
+            renderCarousel();
+            closeUploadModal();
+        }
+
+        // Setup dropzone
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropzone = document.getElementById('dropzone');
+            const locationInput = document.getElementById('locationInput');
+
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.classList.add('dragover');
+            });
+
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.classList.remove('dragover');
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) processFile(file);
+            });
+
+            locationInput.addEventListener('input', checkSaveEnabled);
+
+            // Close modal on outside click
+            document.getElementById('uploadModal').addEventListener('click', (e) => {
+                if (e.target.id === 'uploadModal') closeUploadModal();
+            });
         });
+    </script>
+
+    <script>
+        // Progressive quotes - getting darker with each click
+        const QUOTE_STAGES = [
+            ["The road less traveled is less traveled for a reason."],
+            ["Adventure awaits. So does laundry."],
+            ["Not all who wander are lost. Some are just avoiding home."],
+            ["Collect moments, not things. Moments fade too."],
+            ["Escape the ordinary. The ordinary always finds you."],
+            ["The horizon keeps moving. So do you. Why?"]
+        ];
+
+        let quoteStage = 0;
+        let quoteIndex = 0;
+
+        function cycleQuote() {
+            const el = document.getElementById('dailyQuote');
+            if (quoteStage >= QUOTE_STAGES.length - 1) {
+                el.classList.add('exhausted');
+                return;
+            }
+            quoteStage++;
+            el.style.opacity = '0';
+            setTimeout(() => {
+                el.textContent = QUOTE_STAGES[quoteStage][0];
+                el.style.opacity = '';
+            }, 150);
+        }
+
+        function setInitialQuote() {
+            document.getElementById('dailyQuote').textContent = QUOTE_STAGES[0][0];
+        }
+
+        const BELGIAN_HOLIDAYS = {
+            '0-1': 'Nieuwjaar', '3-5': 'Paaszondag', '3-6': 'Paasmaandag',
+            '4-1': 'Dag van de Arbeid', '4-14': 'O.L.H. Hemelvaart',
+            '4-24': 'Pinksterzondag', '4-25': 'Pinkstermaandag',
+            '6-21': 'Nationale Feestdag', '7-15': 'O.L.V. Hemelvaart',
+            '10-1': 'Allerheiligen', '10-11': 'Wapenstilstand', '11-25': 'Kerstmis'
+        };
+
+        // Belgian school holidays 2026 (Flemish community)
+        function isSchoolHoliday(m, d) {
+            // Kerstvakantie 2025-2026: Dec 22, 2025 - Jan 4, 2026
+            if (m === 0 && d >= 1 && d <= 4) return 'Kerstvakantie';
+            // Krokusvakantie: Feb 16-22, 2026
+            if (m === 1 && d >= 16 && d <= 22) return 'Krokusvakantie';
+            // Paasvakantie: Mar 30 - Apr 12, 2026
+            if (m === 2 && d >= 30 && d <= 31) return 'Paasvakantie';
+            if (m === 3 && d >= 1 && d <= 12) return 'Paasvakantie';
+            // Hemelvaartsweekend: May 14-17, 2026
+            if (m === 4 && d >= 14 && d <= 17) return 'Hemelvaartsweekend';
+            // Pinksterweekend: May 23-25, 2026
+            if (m === 4 && d >= 23 && d <= 25) return 'Pinksterweekend';
+            // Zomervakantie: Jul 1 - Aug 31, 2026
+            if (m === 6 && d >= 1) return 'Zomervakantie';
+            if (m === 7) return 'Zomervakantie';
+            // Herfstvakantie: Nov 2-8, 2026
+            if (m === 10 && d >= 2 && d <= 8) return 'Herfstvakantie';
+            // Kerstvakantie 2026-2027: Dec 21 - Jan 3
+            if (m === 11 && d >= 21) return 'Kerstvakantie';
+            return null;
+        }
+
+        const DEFAULT_COUPLES = ['Tobe & Nina', 'Arne & Margaux', 'Nick'];
+        let couples = [...DEFAULT_COUPLES];
+        let currentCouple = 0;
+        let bookings = {};
+        let labels = {};
+        let shownLevelUps = new Set();
+        let isDragging = false, dragStartDate = null, dragEndDate = null, dragType = null, dragCouple = null;
+        let currentMobileMonth = 0;
+        const MONTHS = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+        const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+        function isMobile() {
+            return window.innerWidth <= 768;
+        }
+
+        function prevMonth() {
+            if (currentMobileMonth > 0) {
+                currentMobileMonth--;
+                updateMobileMonth();
+            }
+        }
+
+        function nextMonth() {
+            if (currentMobileMonth < 11) {
+                currentMobileMonth++;
+                updateMobileMonth();
+            }
+        }
+
+        function updateMobileMonth() {
+            document.getElementById('mobileMonthName').textContent = MONTHS[currentMobileMonth];
+        }
+
+        function dateStrToIndex(d) {
+            const [m, dy] = d.split('-').map(Number);
+            let i = 0; for (let x = 0; x < m; x++) i += DAYS_IN_MONTH[x];
+            return i + dy - 1;
+        }
+        function indexToDateStr(i) {
+            let r = i;
+            for (let m = 0; m < 12; m++) {
+                if (r < DAYS_IN_MONTH[m]) return `${m}-${r + 1}`;
+                r -= DAYS_IN_MONTH[m];
+            }
+            return '11-31';
+        }
+        function getDateRange(a, b) {
+            const ai = dateStrToIndex(a), bi = dateStrToIndex(b);
+            const min = Math.min(ai, bi), max = Math.max(ai, bi);
+            const r = []; for (let i = min; i <= max; i++) r.push(indexToDateStr(i));
+            return r;
+        }
+        function isWeekend(m, d) { const dt = new Date(2026, m, d); return dt.getDay() === 0 || dt.getDay() === 6; }
+
+        function init() {
+            setInitialQuote();
+            loadPhotos();
+            renderCarousel();
+            loadData();
+            render();
+            setupEventListeners();
+        }
+
+        function loadData() {
+            const s = localStorage.getItem('wezienwel_light_v1');
+            if (s) {
+                const d = JSON.parse(s);
+                couples = d.couples || [...DEFAULT_COUPLES];
+                bookings = d.bookings || {};
+                labels = d.labels || {};
+                shownLevelUps = new Set(d.shownLevelUps || []);
+            }
+            couples.forEach((_, i) => {
+                if (!bookings[i]) bookings[i] = { tentative: [], locked: [] };
+                if (!labels[i]) labels[i] = {};
+            });
+        }
+
+        function saveData() {
+            localStorage.setItem('wezienwel_light_v1', JSON.stringify({
+                couples, bookings, labels, shownLevelUps: [...shownLevelUps]
+            }));
+        }
+
+        function setupEventListeners() {
+            document.addEventListener('keydown', e => {
+                if (e.key >= '1' && e.key <= '3' && document.activeElement.tagName !== 'INPUT')
+                    selectCouple(parseInt(e.key) - 1);
+            });
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function endDrag() {
+            if (isDragging && dragStartDate && dragEndDate) finishDragSelection();
+            isDragging = false; dragStartDate = null; dragEndDate = null;
+            clearDragHighlights();
+        }
+
+        function selectCouple(i) { currentCouple = i; render(); }
+        function render() { renderStats(); renderTimeline(); }
+
+        function editCoupleName(i, el) {
+            const cur = couples[i];
+            const inp = document.createElement('input');
+            inp.type = 'text'; inp.className = 'couple-name-input'; inp.value = cur;
+            el.replaceWith(inp); inp.focus(); inp.select();
+            const save = () => { couples[i] = inp.value.trim() || DEFAULT_COUPLES[i]; saveData(); render(); };
+            inp.onblur = save;
+            inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') { inp.value = cur; inp.blur(); } };
+        }
+
+        function renderStats() {
+            const c = document.getElementById('statsRow');
+            const today = new Date();
+            c.innerHTML = couples.map((n, i) => {
+                const tent = (bookings[i]?.tentative || []).length;
+                const lock = bookings[i]?.locked || [];
+                let past = 0, future = 0;
+                lock.forEach(ds => {
+                    const [m, d] = ds.split('-').map(Number);
+                    if (new Date(2026, m, d) < today) past++; else future++;
+                });
+                return `<div class="stat-group ${i === currentCouple ? 'active' : ''}" onclick="selectCouple(${i})">
+                    <div class="stat-name" onclick="event.stopPropagation(); editCoupleName(${i}, this)">${n}</div>
+                    <div class="stat-numbers">
+                        <div class="stat-item"><div class="stat-value">${past}</div><div class="stat-label">Goe gehad</div></div>
+                        <div class="stat-item"><div class="stat-value">${future}</div><div class="stat-label">Gaan we doen</div></div>
+                        <div class="stat-item"><div class="stat-value">${tent}</div><div class="stat-label">We zien wel</div></div>
+                    </div></div>`;
+            }).join('');
+        }
+
+        function isBooked(ci, t, ds) { return (bookings[ci]?.[t] || []).includes(ds); }
+
+        function checkLevelUp(ds) {
+            if (couples.every((_, i) => isBooked(i, 'locked', ds)) && !shownLevelUps.has(ds)) {
+                shownLevelUps.add(ds); saveData(); showLevelUp(ds);
+            }
+        }
+
+        function showLevelUp(ds) {
+            const [m, d] = ds.split('-').map(Number);
+            document.getElementById('levelUpDate').textContent = `${d} ${MONTHS[m]} 2026`;
+            const ov = document.getElementById('levelUpOverlay');
+            const van = document.getElementById('van');
+            const tireMarks = document.getElementById('tireMarks');
+            const dustCloud = document.getElementById('dustCloud');
+            const tx = document.getElementById('levelUpText');
+            const dt = document.getElementById('levelUpDate');
+
+            van.classList.remove('spinning');
+            tireMarks.classList.remove('show');
+            dustCloud.classList.remove('puff');
+            tx.classList.remove('show');
+            dt.classList.remove('show');
+
+            ov.classList.add('active');
+
+            setTimeout(() => {
+                van.classList.add('spinning');
+                playTireSound();
+            }, 100);
+            setTimeout(() => tireMarks.classList.add('show'), 200);
+            setTimeout(() => dustCloud.classList.add('puff'), 300);
+            setTimeout(() => playHonkSound(), 800);
+            setTimeout(() => { tx.classList.add('show'); dt.classList.add('show'); }, 1200);
+        }
+
+        function closeLevelUp() { document.getElementById('levelUpOverlay').classList.remove('active'); }
+
+        function renderTimeline() {
+            const c = document.getElementById('timeline');
+            const today = new Date();
+            let h = '<div class="month-headers"><div class="month-headers-spacer"></div>';
+            MONTHS.forEach((m, i) => { h += `<div class="month-header" style="width:${DAYS_IN_MONTH[i] * 11}px">${m}</div>`; });
+            h += '</div>';
+
+            couples.forEach((n, ci) => {
+                const act = ci === currentCouple;
+                // Calculate stats for inline display
+                const tent = (bookings[ci]?.tentative || []).length;
+                const lock = bookings[ci]?.locked || [];
+                let past = 0, future = 0;
+                lock.forEach(ds => {
+                    const [m, d] = ds.split('-').map(Number);
+                    if (new Date(2026, m, d) < today) past++; else future++;
+                });
+
+                h += `<div class="couple-section ${act ? 'active' : ''}">`;
+                h += `<div class="couple-name" onclick="editCoupleName(${ci}, this)">${n}<span class="couple-stats-inline"> · ${past} goe gehad · ${future} gaan we doen · ${tent} we zien wel</span></div>`;
+
+                ['tentative', 'locked'].forEach(type => {
+                    const lbl = type === 'tentative' ? 'We zien wel' : 'Gaan we doen';
+                    h += `<div class="timeline-row"><div class="row-label">${lbl}</div><div class="days-container">`;
+                    MONTHS.forEach((_, mi) => {
+                        for (let d = 1; d <= DAYS_IN_MONTH[mi]; d++) {
+                            const ds = `${mi}-${d}`;
+                            const dt = new Date(2026, mi, d);
+                            const isPast = dt < today, tod = dt.toDateString() === today.toDateString();
+                            const booked = isBooked(ci, type, ds);
+                            const we = isWeekend(mi, d), hol = BELGIAN_HOLIDAYS[ds];
+                            const schoolHol = isSchoolHoliday(mi, d);
+                            let cls = 'day-cell';
+                            if (we) cls += ' weekend'; if (hol) cls += ' holiday';
+                            if (schoolHol) cls += ' school-holiday';
+                            if (booked) cls += type === 'tentative' ? ' tentative' : ' locked';
+                            if (isPast) cls += ' past'; if (tod) cls += ' today';
+                            h += `<div class="${cls}" data-couple="${ci}" data-type="${type}" data-date="${ds}"
+                                data-display="${d} ${MONTHS[mi]} 2026" data-holiday="${hol || ''}" data-schoolholiday="${schoolHol || ''}"
+                                onmousedown="startDrag(${ci},'${type}','${ds}',event)"
+                                ontouchstart="handleTouch(${ci},'${type}','${ds}',event)"
+                                onmouseenter="continueDrag('${ds}',event)"
+                                onmouseenter="showTooltip(event)" onmouseleave="hideTooltip()"></div>`;
+                        }
+                    });
+                    h += '</div></div>';
+                });
+
+                // Single continuous label input
+                const labelStr = getLabelString(ci);
+                h += `<div class="label-row"><div class="row-label"></div><div class="label-input-container">`;
+                h += `<input type="text" class="label-full-input" value="${labelStr}"
+                    data-couple="${ci}"
+                    onkeydown="handleLabelKeydown(event, ${ci}, this)"
+                    oninput="handleLabelInput(${ci}, this)"
+                    placeholder="wat gaan we doen?">`;
+                h += '</div></div></div>';
+            });
+            c.innerHTML = h;
+        }
+
+        const TOTAL_DAYS = 365;
+
+        function getLabelString(ci) {
+            let str = ' '.repeat(TOTAL_DAYS);
+            const sortedDates = Object.keys(labels[ci] || {}).sort((a, b) => dateStrToIndex(a) - dateStrToIndex(b));
+            sortedDates.forEach(ds => {
+                const pos = dateStrToIndex(ds);
+                const label = labels[ci][ds];
+                str = str.slice(0, pos) + label + str.slice(pos + label.length);
+            });
+            return str;
+        }
+
+        function handleLabelKeydown(e, ci, input) {
+            const pos = input.selectionStart;
+            const val = input.value.padEnd(TOTAL_DAYS, ' ').slice(0, TOTAL_DAYS);
+
+            if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                const newVal = val.slice(0, pos) + e.key + val.slice(pos + 1);
+                input.value = newVal;
+                input.setSelectionRange(pos + 1, pos + 1);
+                parseAndSaveLabels(ci, newVal);
+            }
+            if (e.key === 'Backspace' && pos > 0) {
+                e.preventDefault();
+                const newVal = val.slice(0, pos - 1) + ' ' + val.slice(pos);
+                input.value = newVal;
+                input.setSelectionRange(pos - 1, pos - 1);
+                parseAndSaveLabels(ci, newVal);
+            }
+            if (e.key === 'Delete' && pos < val.length) {
+                e.preventDefault();
+                const newVal = val.slice(0, pos) + ' ' + val.slice(pos + 1);
+                input.value = newVal;
+                input.setSelectionRange(pos, pos);
+                parseAndSaveLabels(ci, newVal);
+            }
+        }
+
+        function handleLabelInput(ci, input) {
+            input.value = input.value.padEnd(TOTAL_DAYS, ' ').slice(0, TOTAL_DAYS);
+            parseAndSaveLabels(ci, input.value);
+        }
+
+        function parseAndSaveLabels(ci, str) {
+            labels[ci] = {};
+            let i = 0;
+            while (i < str.length) {
+                if (str[i] !== ' ') {
+                    let labelStart = i;
+                    let label = '';
+                    while (i < str.length && str[i] !== ' ') {
+                        label += str[i];
+                        i++;
+                    }
+                    const ds = indexToDateStr(labelStart);
+                    labels[ci][ds] = label;
+                } else {
+                    i++;
+                }
+            }
+            saveData();
+        }
+
+        // Mobile: single tap only - no drag
+        function handleTouch(ci, t, ds, e) {
+            e.preventDefault();
+            if (ci !== currentCouple) { selectCouple(ci); return; }
+            toggleSingleDay(ci, t, ds);
+        }
+
+        function startDrag(ci, t, ds, e) {
+            e.preventDefault();
+            if (ci !== currentCouple) { selectCouple(ci); return; }
+
+            // On desktop, allow drag selection
+            isDragging = true; dragStartDate = ds; dragEndDate = ds; dragType = t; dragCouple = ci;
+            highlightDragSelection();
+        }
+
+        function toggleSingleDay(ci, t, ds) {
+            const list = bookings[ci][t];
+            const idx = list.indexOf(ds);
+            if (idx > -1) {
+                list.splice(idx, 1);
+            } else {
+                list.push(ds);
+                if (t === 'locked') {
+                    const tentList = bookings[ci].tentative;
+                    const ti = tentList.indexOf(ds);
+                    if (ti > -1) tentList.splice(ti, 1);
+                }
+            }
+            saveData(); render();
+            if (t === 'locked' && idx === -1) setTimeout(() => checkLevelUp(ds), 80);
+        }
+
+        function continueDrag(ds, e) {
+            if (!isDragging) { showTooltip(e); return; }
+            dragEndDate = ds; highlightDragSelection();
+        }
+
+        function highlightDragSelection() {
+            clearDragHighlights();
+            if (!dragStartDate || !dragEndDate) return;
+            getDateRange(dragStartDate, dragEndDate).forEach(ds => {
+                document.querySelectorAll(`[data-date="${ds}"][data-type="${dragType}"][data-couple="${dragCouple}"]`)
+                    .forEach(c => c.classList.add('drag-selecting'));
+            });
+        }
+
+        function clearDragHighlights() {
+            document.querySelectorAll('.drag-selecting').forEach(e => e.classList.remove('drag-selecting'));
+        }
+
+        function finishDragSelection() {
+            if (!dragStartDate || !dragEndDate || dragCouple === null) return;
+            const dates = getDateRange(dragStartDate, dragEndDate);
+            const list = bookings[dragCouple][dragType];
+            const first = list.includes(dragStartDate);
+            dates.forEach(ds => {
+                const idx = list.indexOf(ds);
+                if (first) { if (idx > -1) list.splice(idx, 1); }
+                else { if (idx === -1) list.push(ds); }
+            });
+            if (dragType === 'locked' && !first) {
+                const tentList = bookings[dragCouple].tentative;
+                dates.forEach(ds => {
+                    const ti = tentList.indexOf(ds);
+                    if (ti > -1) tentList.splice(ti, 1);
+                });
+            }
+            saveData(); render();
+            if (dragType === 'locked' && !first) dates.forEach(ds => setTimeout(() => checkLevelUp(ds), 80));
+        }
+
+        function showTooltip(e) {
+            const el = e.target; if (!el?.dataset?.display) return;
+            document.getElementById('tooltipDate').textContent = el.dataset.display;
+            let lbl = '';
+            if (el.classList.contains('tentative')) lbl = 'We zien wel';
+            else if (el.classList.contains('locked')) lbl = 'Gaan we doen';
+            document.getElementById('tooltipLabel').textContent = lbl;
+            document.getElementById('tooltipHoliday').textContent = el.dataset.holiday || '';
+            document.getElementById('tooltipSchoolHoliday').textContent = el.dataset.schoolholiday || '';
+            const tt = document.getElementById('tooltip');
+            tt.style.display = 'block';
+            tt.style.left = e.pageX + 'px';
+            tt.style.top = (e.pageY - 45) + 'px';
+        }
+
+        function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
+
+        init();
     </script>
 </body>
 </html>
