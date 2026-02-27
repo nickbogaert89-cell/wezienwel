@@ -2122,6 +2122,7 @@
             if (currentMobileMonth > 0) {
                 currentMobileMonth--;
                 updateMobileMonth();
+                scrollToMonth(currentMobileMonth);
             }
         }
 
@@ -2129,11 +2130,22 @@
             if (currentMobileMonth < 11) {
                 currentMobileMonth++;
                 updateMobileMonth();
+                scrollToMonth(currentMobileMonth);
             }
         }
 
         function updateMobileMonth() {
             document.getElementById('mobileMonthName').textContent = MONTHS[currentMobileMonth];
+        }
+
+        function scrollToMonth(month) {
+            const timeline = document.getElementById('timeline');
+            if (!timeline) return;
+            const ROW_LABEL_WIDTH = 55;
+            const DAY_WIDTH = 6;
+            let dayOffset = 0;
+            for (let m = 0; m < month; m++) dayOffset += DAYS_IN_MONTH[m];
+            timeline.scrollTo({ left: ROW_LABEL_WIDTH + dayOffset * DAY_WIDTH, behavior: 'smooth' });
         }
 
         function dateStrToIndex(d) {
@@ -2249,6 +2261,25 @@
             });
             document.addEventListener('mouseup', endDrag);
             document.addEventListener('touchend', endDrag);
+
+            const timeline = document.getElementById('timeline');
+            if (timeline) {
+                timeline.addEventListener('scroll', () => {
+                    if (!isMobile()) return;
+                    const ROW_LABEL_WIDTH = 55;
+                    const DAY_WIDTH = 6;
+                    const dayIdx = Math.max(0, (timeline.scrollLeft - ROW_LABEL_WIDTH) / DAY_WIDTH);
+                    let month = 11, cumDays = 0;
+                    for (let m = 0; m < 12; m++) {
+                        if (dayIdx < cumDays + DAYS_IN_MONTH[m]) { month = m; break; }
+                        cumDays += DAYS_IN_MONTH[m];
+                    }
+                    if (month !== currentMobileMonth) {
+                        currentMobileMonth = month;
+                        updateMobileMonth();
+                    }
+                }, { passive: true });
+            }
         }
 
         function endDrag() {
