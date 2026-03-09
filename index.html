@@ -924,13 +924,13 @@
         <div class="modal-title">Trip toevoegen</div>
         <div class="form-group">
             <label>Wie</label>
-            <select id="tripCouple"></select>
+            <div id="tripCoupleList" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
         </div>
         <div class="form-group">
             <label>Type</label>
             <select id="tripType">
-                <option value="tentative">We zien wel</option>
                 <option value="locked">Gaan we doen</option>
+                <option value="tentative">We zien wel</option>
             </select>
         </div>
         <div class="form-group">
@@ -1122,11 +1122,11 @@
 <script>
     // ── Constants ──
     const COUPLE_COLORS = [
-        { solid: '#4285F4', light: 'rgba(66,133,244,0.22)' },
-        { solid: '#34A853', light: 'rgba(52,168,83,0.22)' },
-        { solid: '#FA7B17', light: 'rgba(250,123,23,0.22)' },
-        { solid: '#9B59B6', light: 'rgba(155,89,182,0.22)' },
-        { solid: '#E91E63', light: 'rgba(233,30,99,0.22)' },
+        { solid: '#6C63FF', light: 'rgba(108,99,255,0.20)' },  // violet
+        { solid: '#FF6B6B', light: 'rgba(255,107,107,0.20)' }, // coral
+        { solid: '#00C9A7', light: 'rgba(0,201,167,0.20)' },   // mint
+        { solid: '#FFB347', light: 'rgba(255,179,71,0.20)' },  // amber
+        { solid: '#4FC3F7', light: 'rgba(79,195,247,0.20)' },  // sky
     ];
 
     const MONTHS_FULL = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
@@ -1317,9 +1317,22 @@
     }
 
     // ── Trip modal ──
+    function populateTripCoupleList() {
+        document.getElementById('tripCoupleList').innerHTML = couples.map((c,i) => {
+            const col = COUPLE_COLORS[i % COUPLE_COLORS.length];
+            return `<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                <input type="checkbox" name="tripCouple" value="${i}" style="width:18px;height:18px;accent-color:${col.solid};">
+                <span style="font-size:15px;">${c}</span>
+            </label>`;
+        }).join('');
+        // Default: check first couple
+        const first = document.querySelector('input[name="tripCouple"]');
+        if(first) first.checked = true;
+    }
+
     function openTripModal() {
-        document.getElementById('tripCouple').innerHTML = couples.map((c,i)=>`<option value="${i}">${c}</option>`).join('');
-        document.getElementById('tripType').value = 'tentative';
+        populateTripCoupleList();
+        document.getElementById('tripType').value = 'locked';
         document.getElementById('tripStartDate').value = '';
         document.getElementById('tripEndDate').value = '';
         document.getElementById('tripDescription').value = '';
@@ -1327,8 +1340,8 @@
     }
 
     function openTripModalForDate(dateStr) {
-        document.getElementById('tripCouple').innerHTML = couples.map((c,i)=>`<option value="${i}">${c}</option>`).join('');
-        document.getElementById('tripType').value = 'tentative';
+        populateTripCoupleList();
+        document.getElementById('tripType').value = 'locked';
         document.getElementById('tripStartDate').value = dateStr;
         document.getElementById('tripEndDate').value = dateStr;
         document.getElementById('tripDescription').value = '';
@@ -1338,31 +1351,36 @@
     function closeTripModal() { document.getElementById('tripModal').classList.remove('active'); }
 
     function saveTrip() {
-        const ci   = parseInt(document.getElementById('tripCouple').value);
+        const selectedCouples = [...document.querySelectorAll('input[name="tripCouple"]:checked')].map(el=>parseInt(el.value));
         const type = document.getElementById('tripType').value;
         const s    = document.getElementById('tripStartDate').value;
         const e    = document.getElementById('tripEndDate').value;
         const desc = document.getElementById('tripDescription').value.trim().toUpperCase();
 
+        if(!selectedCouples.length){ alert('Selecteer minstens één koppel'); return; }
         if(!s||!e){ alert('Selecteer start- en einddatum'); return; }
         const start = new Date(s), end = new Date(e);
         if(end<start){ alert('Einddatum moet na startdatum zijn'); return; }
 
-        const cur = new Date(start);
-        while(cur<=end) {
-            const m=cur.getMonth(), d=cur.getDate(), ds=`${m}-${d}`;
-            if(!bookings[ci][type].includes(ds)) bookings[ci][type].push(ds);
-            if(type==='locked'){
-                const ti = bookings[ci].tentative.indexOf(ds);
-                if(ti>-1) bookings[ci].tentative.splice(ti,1);
+        selectedCouples.forEach(ci => {
+            const cur = new Date(start);
+            while(cur<=end) {
+                const m=cur.getMonth(), d=cur.getDate(), ds=`${m}-${d}`;
+                if(!bookings[ci][type].includes(ds)) bookings[ci][type].push(ds);
+                if(type==='locked'){
+                    const ti = bookings[ci].tentative.indexOf(ds);
+                    if(ti>-1) bookings[ci].tentative.splice(ti,1);
+                }
+                if(desc) labels[ci][ds]=desc;
+                cur.setDate(cur.getDate()+1);
             }
-            if(desc) labels[ci][ds]=desc;
-            cur.setDate(cur.getDate()+1);
-        }
+        });
         saveData(); renderCalendar(); closeTripModal();
         if(type==='locked'){
-            const c2=new Date(start);
-            while(c2<=end){ const m=c2.getMonth(),d=c2.getDate(); setTimeout(()=>checkLevelUp(`${m}-${d}`),80); c2.setDate(c2.getDate()+1); }
+            selectedCouples.forEach(ci => {
+                const c2=new Date(start);
+                while(c2<=end){ const m=c2.getMonth(),d=c2.getDate(); setTimeout(()=>checkLevelUp(`${m}-${d}`),80); c2.setDate(c2.getDate()+1); }
+            });
         }
     }
 
