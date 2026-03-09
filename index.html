@@ -1318,16 +1318,32 @@
 
     // ── Trip modal ──
     function populateTripCoupleList() {
-        document.getElementById('tripCoupleList').innerHTML = couples.map((c,i) => {
+        const container = document.getElementById('tripCoupleList');
+        container.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;';
+        container.innerHTML = couples.map((c,i) => {
             const col = COUPLE_COLORS[i % COUPLE_COLORS.length];
-            return `<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-                <input type="checkbox" name="tripCouple" value="${i}" style="width:18px;height:18px;accent-color:${col.solid};">
-                <span style="font-size:15px;">${c}</span>
-            </label>`;
+            return `<button type="button" data-ci="${i}"
+                onclick="toggleCoupleChip(this, '${col.solid}')"
+                style="padding:8px 16px;border-radius:999px;border:2px solid ${col.solid};
+                       background:transparent;color:${col.solid};font-size:14px;font-weight:600;
+                       cursor:pointer;transition:all 0.15s;">${c}</button>`;
         }).join('');
-        // Default: check first couple
-        const first = document.querySelector('input[name="tripCouple"]');
-        if(first) first.checked = true;
+        // Default: select first couple
+        const first = container.querySelector('button');
+        if(first) toggleCoupleChip(first, COUPLE_COLORS[0].solid);
+    }
+
+    function toggleCoupleChip(btn, solidColor) {
+        const active = btn.dataset.active === '1';
+        if(active) {
+            btn.dataset.active = '0';
+            btn.style.background = 'transparent';
+            btn.style.color = solidColor;
+        } else {
+            btn.dataset.active = '1';
+            btn.style.background = solidColor;
+            btn.style.color = '#fff';
+        }
     }
 
     function openTripModal() {
@@ -1351,7 +1367,7 @@
     function closeTripModal() { document.getElementById('tripModal').classList.remove('active'); }
 
     function saveTrip() {
-        const selectedCouples = [...document.querySelectorAll('input[name="tripCouple"]:checked')].map(el=>parseInt(el.value));
+        const selectedCouples = [...document.querySelectorAll('#tripCoupleList button[data-active="1"]')].map(el=>parseInt(el.dataset.ci));
         const type = document.getElementById('tripType').value;
         const s    = document.getElementById('tripStartDate').value;
         const e    = document.getElementById('tripEndDate').value;
