@@ -938,11 +938,11 @@
         </div>
         <div class="form-group">
             <label>Van</label>
-            <input type="date" id="tripStartDate" min="2026-01-01" max="2026-12-31">
+            <input type="date" id="tripStartDate" min="2026-01-01" max="2027-12-31">
         </div>
         <div class="form-group">
             <label>Tot</label>
-            <input type="date" id="tripEndDate" min="2026-01-01" max="2026-12-31">
+            <input type="date" id="tripEndDate" min="2026-01-01" max="2027-12-31">
         </div>
         <div class="form-group">
             <label>Beschrijving (optioneel)</label>
@@ -1191,13 +1191,15 @@
         if (m===11 && d>=21)         return 'Kerstvakantie';
         return null;
     }
-    function isWeekend(m, d) { const dow = new Date(2026,m,d).getDay(); return dow===0||dow===6; }
+    function isWeekend(m, d, y) { const dow = new Date(y,m,d).getDay(); return dow===0||dow===6; }
+    function ds(y, m, d) { return `${y}-${m}-${d}`; }  // date key helper
 
     // ── State ──
     const DEFAULT_COUPLES = ['Tobe & Nina','Arne & Margaux','Nick'];
     let couples = [...DEFAULT_COUPLES];
     let bookings = {}, labels = {}, shownLevelUps = new Set();
     let currentCalMonth = new Date().getMonth();
+    let currentCalYear  = new Date().getFullYear();
     let isSavingBookings = false;
     let editState = null; // { ci, type, oldStart, oldEnd } when editing
 
@@ -1219,12 +1221,20 @@
     }
 
     // ── Month navigation ──
-    function prevMonth() { if(currentCalMonth>0){ currentCalMonth--; renderCalendar(); } }
-    function nextMonth() { if(currentCalMonth<11){ currentCalMonth++; renderCalendar(); } }
+    function prevMonth() {
+        if(currentCalMonth>0){ currentCalMonth--; }
+        else if(currentCalYear>2026){ currentCalYear--; currentCalMonth=11; }
+        renderCalendar();
+    }
+    function nextMonth() {
+        if(currentCalMonth<11){ currentCalMonth++; }
+        else if(currentCalYear<2027){ currentCalYear++; currentCalMonth=0; }
+        renderCalendar();
+    }
 
     // ── Render ──
     function renderCalendar() {
-        document.getElementById('monthNavLabel').textContent = MONTHS_FULL[currentCalMonth] + ' 2026';
+        document.getElementById('monthNavLabel').textContent = MONTHS_FULL[currentCalMonth] + ' ' + currentCalYear;
         updateHeaderPhoto();
         renderCoupleLegend();
         renderCalGrid();
@@ -1237,7 +1247,11 @@
             const locked = bookings[ci]?.locked || [];
             const tent = (bookings[ci]?.tentative||[]).length;
             let future = 0;
-            locked.forEach(ds => { const [m,d]=ds.split('-').map(Number); if(new Date(2026,m,d)>=today) future++; });
+            locked.forEach(k => {
+                const p=k.split('-').map(Number);
+                const [y,m,d] = p.length===3 ? p : [2026,...p];
+                if(new Date(y,m,d)>=today) future++;
+            });
             return `
                 <div class="couple-legend-row" onclick="editCoupleNameInline(${ci}, event)">
                     <div class="couple-color-swatch" style="background:${col.solid}"></div>
@@ -1248,21 +1262,22 @@
     }
 
     function renderCalGrid() {
-        const m = currentCalMonth, daysInMonth = DAYS_IN_MONTH[m];
+        const m = currentCalMonth, y = currentCalYear, daysInMonth = DAYS_IN_MONTH[m];
         const today = new Date(); today.setHours(0,0,0,0);
-        const startOffset = (new Date(2026,m,1).getDay()+6)%7;
+        const startOffset = (new Date(y,m,1).getDay()+6)%7;
         let html = '';
 
         for(let i=0;i<startOffset;i++) html += '<div class="cal-day empty"></div>';
 
         for(let d=1;d<=daysInMonth;d++) {
-            const ds = `${m}-${d}`;
-            const dt = new Date(2026,m,d);
+            const dateKey = `${y}-${m}-${d}`;
+            const holKey  = `${m}-${d}`;
+            const dt = new Date(y,m,d);
             const isToday = dt.getTime()===today.getTime();
             const isPast  = dt<today;
-            const hol     = BELGIAN_HOLIDAYS[ds];
+            const hol     = BELGIAN_HOLIDAYS[holKey];
             const schoolHol = isSchoolHoliday(m,d);
-            const wknd    = isWeekend(m,d);
+            const wknd    = isWeekend(m,d,y);
 
             let cls = 'cal-day';
             if(wknd) cls += ' weekend';
@@ -1271,7 +1286,7 @@
             if(hol) cls += ' pub-hol';
             else if(schoolHol) cls += ' school-hol';
 
-            html += `<div class="${cls}" onclick="onDayTap(${m},${d})">`;
+            html += `<div class="${cls}" onclick="onDayTap(${y},${m},${d})">`;
             html += `<div class="day-num">${d}</div>`;
             if(hol) html += `<div class="day-hol-label">${hol}</div>`;
             else if(schoolHol) html += `<div class="day-school-dot"></div>`;
@@ -1279,10 +1294,10 @@
             const bars = [];
             couples.forEach((_,ci) => {
                 const col = COUPLE_COLORS[ci % COUPLE_COLORS.length];
-                const tripLabel = (labels[ci] && labels[ci][ds]) ? labels[ci][ds] : '';
-                if(isBooked(ci,'locked',ds)) {
+                const tripLabel = (labels[ci] && labels[ci][dateKey]) ? labels[ci][dateKey] : '';
+                if(isBooked(ci,'locked',dateKey)) {
                     bars.push(`<div class="booking-bar" style="background:${col.solid}"><span>${tripLabel}</span></div>`);
-                } else if(isBooked(ci,'tentative',ds)) {
+                } else if(isBooked(ci,'tentative',dateKey)) {
                     bars.push(`<div class="booking-bar" style="background:${col.light};outline:1px solid ${col.solid}55"><span style="color:${col.solid};text-shadow:none;">${tripLabel}</span></div>`);
                 }
             });
@@ -1296,24 +1311,24 @@
     }
 
     // ── Day tap ──
-    function onDayTap(m, d) {
-        const ds = `${m}-${d}`;
-        const hol = BELGIAN_HOLIDAYS[ds];
+    function onDayTap(y, m, d) {
+        const dateKey = `${y}-${m}-${d}`;
+        const hol = BELGIAN_HOLIDAYS[`${m}-${d}`];
         const schoolHol = isSchoolHoliday(m,d);
         const dayBookings = [];
         couples.forEach((name,ci) => {
-            if(isBooked(ci,'locked',ds)) dayBookings.push({ci,name,type:'locked'});
-            else if(isBooked(ci,'tentative',ds)) dayBookings.push({ci,name,type:'tentative'});
+            if(isBooked(ci,'locked',dateKey)) dayBookings.push({ci,name,type:'locked'});
+            else if(isBooked(ci,'tentative',dateKey)) dayBookings.push({ci,name,type:'tentative'});
         });
 
         // No bookings and no holidays → go straight to trip modal
         if(dayBookings.length===0 && !hol && !schoolHol) {
-            openTripModalForDate(`2026-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+            openTripModalForDate(`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
             return;
         }
 
         // Show day sheet
-        document.getElementById('sheetDateTitle').textContent = `${d} ${MONTHS[m]} 2026`;
+        document.getElementById('sheetDateTitle').textContent = `${d} ${MONTHS[m]} ${y}`;
         const holEl = document.getElementById('sheetHolLabel');
         holEl.textContent = hol||''; holEl.style.display = hol ? 'block' : 'none';
         const schoolEl = document.getElementById('sheetSchoolLabel');
@@ -1330,18 +1345,18 @@
                     ? `background:${col.solid}`
                     : `background:${col.light};outline:2px solid ${col.solid}66;outline-offset:0`;
                 return `
-                    <div class="sheet-booking-row" onclick="editBooking(${b.ci},'${b.type}','${ds}')" style="cursor:pointer;">
+                    <div class="sheet-booking-row" onclick="editBooking(${b.ci},'${b.type}','${dateKey}')" style="cursor:pointer;">
                         <div class="sheet-booking-dot" style="${dotStyle}"></div>
                         <div class="sheet-booking-info">
                             <div class="sheet-booking-name">${b.name}</div>
                             <div class="sheet-booking-type">${label}</div>
                         </div>
-                        <button class="sheet-del-btn" onclick="event.stopPropagation();deleteFromSheet(${b.ci},'${b.type}','${ds}')">×</button>
+                        <button class="sheet-del-btn" onclick="event.stopPropagation();deleteFromSheet(${b.ci},'${b.type}','${dateKey}')">×</button>
                     </div>`;
             }).join('');
         }
 
-        const dateStr = `2026-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         document.getElementById('sheetAddBtn').onclick = () => { closeDaySheet(); openTripModalForDate(dateStr); };
         document.getElementById('daySheet').classList.add('active');
     }
@@ -1356,21 +1371,20 @@
     }
 
     // ── Edit booking ──
-    function findTripBounds(ci, type, ds) {
-        const [m, d] = ds.split('-').map(Number);
-        let start = new Date(2026, m, d);
-        let end   = new Date(2026, m, d);
-        // Walk back
+    function findTripBounds(ci, type, dateKey) {
+        const parts = dateKey.split('-').map(Number);
+        const [y, m, d] = parts.length === 3 ? parts : [2026, ...parts];
+        let start = new Date(y, m, d);
+        let end   = new Date(y, m, d);
         let cur = new Date(start); cur.setDate(cur.getDate()-1);
-        while(cur.getFullYear()===2026) {
-            const cds=`${cur.getMonth()}-${cur.getDate()}`;
-            if(bookings[ci][type].includes(cds)){ start=new Date(cur); cur.setDate(cur.getDate()-1); } else break;
+        while(cur >= new Date(2026,0,1)) {
+            const k=`${cur.getFullYear()}-${cur.getMonth()}-${cur.getDate()}`;
+            if(bookings[ci][type].includes(k)){ start=new Date(cur); cur.setDate(cur.getDate()-1); } else break;
         }
-        // Walk forward
         cur = new Date(end); cur.setDate(cur.getDate()+1);
-        while(cur.getFullYear()===2026) {
-            const cds=`${cur.getMonth()}-${cur.getDate()}`;
-            if(bookings[ci][type].includes(cds)){ end=new Date(cur); cur.setDate(cur.getDate()+1); } else break;
+        while(cur <= new Date(2027,11,31)) {
+            const k=`${cur.getFullYear()}-${cur.getMonth()}-${cur.getDate()}`;
+            if(bookings[ci][type].includes(k)){ end=new Date(cur); cur.setDate(cur.getDate()+1); } else break;
         }
         return { start, end };
     }
@@ -1378,9 +1392,9 @@
     function editBooking(ci, type, ds) {
         closeDaySheet();
         const { start, end } = findTripBounds(ci, type, ds);
-        const fmt = d => `2026-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
         const startStr = fmt(start);
-        const startDs  = `${start.getMonth()}-${start.getDate()}`;
+        const startDs  = `${start.getFullYear()}-${start.getMonth()}-${start.getDate()}`;
         editState = { ci, type, oldStart: start, oldEnd: end };
 
         populateTripCoupleList();
@@ -1487,13 +1501,13 @@
         selectedCouples.forEach(ci => {
             const cur = new Date(start);
             while(cur<=end) {
-                const m=cur.getMonth(), d=cur.getDate(), ds=`${m}-${d}`;
-                if(!bookings[ci][type].includes(ds)) bookings[ci][type].push(ds);
+                const dk=`${cur.getFullYear()}-${cur.getMonth()}-${cur.getDate()}`;
+                if(!bookings[ci][type].includes(dk)) bookings[ci][type].push(dk);
                 if(type==='locked'){
-                    const ti = bookings[ci].tentative.indexOf(ds);
+                    const ti = bookings[ci].tentative.indexOf(dk);
                     if(ti>-1) bookings[ci].tentative.splice(ti,1);
                 }
-                if(desc) labels[ci][ds]=desc;
+                if(desc) labels[ci][dk]=desc;
                 cur.setDate(cur.getDate()+1);
             }
         });
@@ -1501,7 +1515,11 @@
         if(type==='locked'){
             selectedCouples.forEach(ci => {
                 const c2=new Date(start);
-                while(c2<=end){ const m=c2.getMonth(),d=c2.getDate(); setTimeout(()=>checkLevelUp(`${m}-${d}`),80); c2.setDate(c2.getDate()+1); }
+                while(c2<=end){
+                    const dk=`${c2.getFullYear()}-${c2.getMonth()}-${c2.getDate()}`;
+                    setTimeout(()=>checkLevelUp(dk),80);
+                    c2.setDate(c2.getDate()+1);
+                }
             });
         }
     }
@@ -1529,8 +1547,9 @@
     }
 
     function showLevelUp(ds) {
-        const [m,d] = ds.split('-').map(Number);
-        document.getElementById('levelUpDate').textContent = `${d} ${MONTHS[m]} 2026`;
+        const parts = ds.split('-').map(Number);
+        const [y,m,d] = parts.length===3 ? parts : [2026,...parts];
+        document.getElementById('levelUpDate').textContent = `${d} ${MONTHS[m]} ${y}`;
         const ov=document.getElementById('levelUpOverlay');
         const van=document.getElementById('van'), tm=document.getElementById('tireMarks');
         const dc=document.getElementById('dustCloud'), tx=document.getElementById('levelUpText');
@@ -1573,6 +1592,22 @@
             if(s){ const d=JSON.parse(s); couples=d.couples||[...DEFAULT_COUPLES]; bookings=d.bookings||{}; labels=d.labels||{}; shownLevelUps=new Set(d.shownLevelUps||[]); }
         }
         couples.forEach((_,i)=>{ if(!bookings[i]) bookings[i]={tentative:[],locked:[]}; if(!labels[i]) labels[i]={}; });
+        migrateOldKeys();
+    }
+
+    function migrateOldKeys() {
+        // Old format "m-d" → new format "2026-m-d"
+        const isOld = k => !/^\d{4}-/.test(k);
+        couples.forEach((_,i) => {
+            ['locked','tentative'].forEach(t => {
+                bookings[i][t] = (bookings[i][t]||[]).map(k => isOld(k) ? `2026-${k}` : k);
+            });
+            const old = labels[i]||{};
+            const migrated = {};
+            Object.keys(old).forEach(k => { migrated[isOld(k)?`2026-${k}`:k] = old[k]; });
+            labels[i] = migrated;
+        });
+        shownLevelUps = new Set([...shownLevelUps].map(k => isOld(k) ? `2026-${k}` : k));
     }
 
     async function saveData() {
@@ -1593,6 +1628,7 @@
                 const d=doc.data();
                 couples=d.couples||[...DEFAULT_COUPLES]; bookings=d.bookings||{}; labels=d.labels||{}; shownLevelUps=new Set(d.shownLevelUps||[]);
                 couples.forEach((_,i)=>{ if(!bookings[i]) bookings[i]={tentative:[],locked:[]}; if(!labels[i]) labels[i]={}; });
+                migrateOldKeys();
                 renderCalendar();
             }
         });
