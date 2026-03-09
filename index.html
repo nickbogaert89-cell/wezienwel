@@ -895,6 +895,7 @@
         <div class="fuel-actions">
             <button class="fuel-btn" onclick="openFuelModal('drive')">+ Ritje</button>
             <button class="fuel-btn" onclick="openFuelModal('refill')">+ Tanken</button>
+            <button class="fuel-btn" onclick="openCostModal()">+ Kosten</button>
         </div>
     </div>
     <div class="fuel-balances" id="fuelBalances"></div>
@@ -978,6 +979,35 @@
         <div class="modal-actions">
             <button class="btn-modal-cancel" onclick="closeFuelModal()">Annuleren</button>
             <button class="btn-modal-primary" onclick="saveFuelEntry()">Opslaan</button>
+        </div>
+    </div>
+</div>
+
+<!-- ─── COST MODAL ─── -->
+<div class="modal-overlay" id="costModal">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">Autokosten toevoegen</div>
+        <div class="form-group">
+            <label>Omschrijving</label>
+            <input type="text" id="costDesc" placeholder="bv. Verzekering, APK, banden...">
+        </div>
+        <div class="form-group">
+            <label>Bedrag (€)</label>
+            <input type="number" id="costAmount" placeholder="bv. 300.00" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+            <label>Betaald door</label>
+            <select id="costPaidBy"></select>
+        </div>
+        <div class="form-group">
+            <label>Verdeling</label>
+            <div id="costSplitRows" style="display:flex;flex-direction:column;gap:10px;margin-top:6px;"></div>
+            <div id="costSplitWarning" style="font-size:0.72rem;color:#C1440E;margin-top:6px;display:none;">Totaal moet 100% zijn</div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-modal-cancel" onclick="closeCostModal()">Annuleren</button>
+            <button class="btn-modal-primary" onclick="saveCostEntry()">Opslaan</button>
         </div>
     </div>
 </div>
@@ -1627,16 +1657,75 @@
         try { await db.collection('wezienwel_fuel').doc(id).delete(); fuelEntries=fuelEntries.filter(e=>e.id!==id); renderFuelTracker(); } catch(e){}
     }
 
+    // ── Car costs ──
+    function openCostModal() {
+        document.getElementById('costDesc').value = '';
+        document.getElementById('costAmount').value = '';
+        document.getElementById('costPaidBy').innerHTML = couples.map((c,i)=>`<option value="${i}">${c}</option>`).join('');
+        const n = couples.length;
+        const defaultPct = parseFloat((100/n).toFixed(2));
+        document.getElementById('costSplitRows').innerHTML = couples.map((c,i) => {
+            const col = COUPLE_COLORS[i % COUPLE_COLORS.length];
+            return `<div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:10px;height:10px;border-radius:50%;background:${col.solid};flex-shrink:0;"></div>
+                <span style="flex:1;font-size:14px;">${c}</span>
+                <input type="number" id="costSplit${i}" value="${defaultPct}" min="0" max="100" step="0.01"
+                    oninput="validateSplits()"
+                    style="width:70px;border:1.5px solid rgba(0,0,0,0.15);border-radius:8px;padding:6px 8px;font-size:14px;text-align:right;">
+                <span style="font-size:14px;">%</span>
+            </div>`;
+        }).join('');
+        document.getElementById('costSplitWarning').style.display = 'none';
+        document.getElementById('costModal').classList.add('active');
+    }
+
+    function closeCostModal() { document.getElementById('costModal').classList.remove('active'); }
+
+    function validateSplits() {
+        const total = couples.reduce((s,_,i) => s + (parseFloat(document.getElementById(`costSplit${i}`)?.value)||0), 0);
+        document.getElementById('costSplitWarning').style.display = Math.abs(total-100) > 0.1 ? 'block' : 'none';
+    }
+
+    async function saveCostEntry() {
+        const desc   = document.getElementById('costDesc').value.trim();
+        const amount = parseFloat(document.getElementById('costAmount').value);
+        const paidBy = parseInt(document.getElementById('costPaidBy').value);
+        const splits = couples.map((_,i) => parseFloat(document.getElementById(`costSplit${i}`).value)||0);
+        const total  = splits.reduce((s,v)=>s+v,0);
+
+        if(!desc){ alert('Vul een omschrijving in'); return; }
+        if(!amount||amount<=0){ alert('Vul een geldig bedrag in'); return; }
+        if(Math.abs(total-100)>0.1){ alert('Verdeling moet optellen tot 100%'); return; }
+
+        const entry = { type:'cost', desc, amount, paidBy, splits, coupleName:couples[paidBy],
+                        date:new Date().toISOString(), timestamp:firebase.firestore.FieldValue.serverTimestamp() };
+        isSavingFuel=true;
+        try {
+            const ref=await db.collection('wezienwel_fuel').add(entry);
+            entry.id=ref.id; fuelEntries.unshift(entry); renderFuelTracker(); closeCostModal();
+        } catch(e){ alert('Error: '+e.message); }
+        setTimeout(()=>{ isSavingFuel=false; },1000);
+    }
+
     function calculateFuelBalances() {
-        const km={},paid={};
-        couples.forEach((_,i)=>{ km[i]=0; paid[i]=0; });
-        let totalKm=0,totalPaid=0;
+        const km={}, refillPaid={}, costPaid={}, costOwed={};
+        couples.forEach((_,i)=>{ km[i]=0; refillPaid[i]=0; costPaid[i]=0; costOwed[i]=0; });
+        let totalKm=0, totalRefill=0;
         fuelEntries.forEach(e=>{
-            if(e.type==='drive'&&e.km){ km[e.coupleIdx]=(km[e.coupleIdx]||0)+e.km; totalKm+=e.km; }
-            else if(e.type==='refill'&&e.amount){ paid[e.coupleIdx]=(paid[e.coupleIdx]||0)+e.amount; totalPaid+=e.amount; }
+            if(e.type==='drive'&&e.km){ km[e.coupleIdx]+=e.km; totalKm+=e.km; }
+            else if(e.type==='refill'&&e.amount){ refillPaid[e.coupleIdx]+=e.amount; totalRefill+=e.amount; }
+            else if(e.type==='cost'&&e.amount){
+                costPaid[e.paidBy]+=e.amount;
+                couples.forEach((_,i)=>{ costOwed[i]+=e.amount*((e.splits?e.splits[i]:(100/couples.length))/100); });
+            }
         });
         const balances={};
-        couples.forEach((name,i)=>{ const share=totalKm>0?(km[i]/totalKm)*totalPaid:0; balances[i]={name,km:km[i],paid:paid[i],balance:paid[i]-share}; });
+        couples.forEach((name,i)=>{
+            const kmShare = totalKm>0 ? (km[i]/totalKm)*totalRefill : 0;
+            const fuelBal = refillPaid[i] - kmShare;
+            const costBal = costPaid[i] - costOwed[i];
+            balances[i] = { name, km:km[i], paid:refillPaid[i]+costPaid[i], balance:fuelBal+costBal };
+        });
         return balances;
     }
 
@@ -1661,6 +1750,8 @@
                 const date=entry.date?new Date(entry.date).toLocaleDateString('nl-BE'):'';
                 const info=entry.type==='drive'
                     ?`🚗 ${entry.coupleName} — ${entry.km} km${entry.note?' · '+entry.note:''}`
+                    :entry.type==='cost'
+                    ?`🔧 ${entry.desc} — €${entry.amount?.toFixed(2)} (betaald door ${entry.coupleName})`
                     :`⛽ ${entry.coupleName} — €${entry.amount?.toFixed(2)}`;
                 return `<div class="fuel-history-item">
                     <div class="fuel-history-info">
