@@ -256,9 +256,23 @@
         }
 
         .booking-bar {
-            height: 5px;
-            border-radius: 2px;
+            height: 16px;
+            border-radius: 3px;
             width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            overflow: hidden;
+        }
+        .booking-bar span {
+            font-size: 9px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1;
+            color: #fff;
+            text-shadow: 0 0 3px rgba(0,0,0,0.4);
         }
 
         /* ─── DAY BOTTOM SHEET ─── */
@@ -1226,10 +1240,11 @@
             const bars = [];
             couples.forEach((_,ci) => {
                 const col = COUPLE_COLORS[ci % COUPLE_COLORS.length];
+                const tripLabel = (labels[ci] && labels[ci][ds]) ? labels[ci][ds] : '';
                 if(isBooked(ci,'locked',ds)) {
-                    bars.push(`<div class="booking-bar" style="background:${col.solid}"></div>`);
+                    bars.push(`<div class="booking-bar" style="background:${col.solid}"><span>${tripLabel}</span></div>`);
                 } else if(isBooked(ci,'tentative',ds)) {
-                    bars.push(`<div class="booking-bar" style="background:${col.light};outline:1px solid ${col.solid}55"></div>`);
+                    bars.push(`<div class="booking-bar" style="background:${col.light};outline:1px solid ${col.solid}55"><span style="color:${col.solid};text-shadow:none;">${tripLabel}</span></div>`);
                 }
             });
             if(bars.length) html += `<div class="day-bars">${bars.join('')}</div>`;
@@ -1333,7 +1348,7 @@
         const start = new Date(s), end = new Date(e);
         if(end<start){ alert('Einddatum moet na startdatum zijn'); return; }
 
-        const cur = new Date(start); let isFirst = true;
+        const cur = new Date(start);
         while(cur<=end) {
             const m=cur.getMonth(), d=cur.getDate(), ds=`${m}-${d}`;
             if(!bookings[ci][type].includes(ds)) bookings[ci][type].push(ds);
@@ -1341,7 +1356,7 @@
                 const ti = bookings[ci].tentative.indexOf(ds);
                 if(ti>-1) bookings[ci].tentative.splice(ti,1);
             }
-            if(isFirst&&desc){ labels[ci][ds]=desc; isFirst=false; }
+            if(desc) labels[ci][ds]=desc;
             cur.setDate(cur.getDate()+1);
         }
         saveData(); renderCalendar(); closeTripModal();
