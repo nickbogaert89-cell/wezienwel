@@ -1067,7 +1067,12 @@
 
     function updateHeaderPhoto() {
         const bg = document.getElementById('headerBg');
-        bg.style.backgroundImage = photos.length > 0 ? `url('${photos[0].src}')` : '';
+        if(photos.length > 0) {
+            const idx = currentCalMonth % photos.length;
+            bg.style.backgroundImage = `url('${photos[idx].src}')`;
+        } else {
+            bg.style.backgroundImage = '';
+        }
     }
 
     async function saveNewPhoto(src, location) {
@@ -1190,6 +1195,7 @@
     // ── Render ──
     function renderCalendar() {
         document.getElementById('monthNavLabel').textContent = MONTHS_FULL[currentCalMonth] + ' 2026';
+        updateHeaderPhoto();
         renderCoupleLegend();
         renderCalGrid();
     }
