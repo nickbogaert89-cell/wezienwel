@@ -1162,6 +1162,7 @@
     let bookings = {}, labels = {}, shownLevelUps = new Set();
     let currentCalMonth = new Date().getMonth();
     let isSavingBookings = false;
+    let editState = null; // { ci, type, oldStart, oldEnd } when editing
 
     // ── Helpers ──
     function isBooked(ci, t, ds) { return (bookings[ci]?.[t]||[]).includes(ds); }
@@ -1291,13 +1292,13 @@
                     ? `background:${col.solid}`
                     : `background:${col.light};outline:2px solid ${col.solid}66;outline-offset:0`;
                 return `
-                    <div class="sheet-booking-row">
+                    <div class="sheet-booking-row" onclick="editBooking(${b.ci},'${b.type}','${ds}')" style="cursor:pointer;">
                         <div class="sheet-booking-dot" style="${dotStyle}"></div>
                         <div class="sheet-booking-info">
                             <div class="sheet-booking-name">${b.name}</div>
                             <div class="sheet-booking-type">${label}</div>
                         </div>
-                        <button class="sheet-del-btn" onclick="deleteFromSheet(${b.ci},'${b.type}','${ds}')">×</button>
+                        <button class="sheet-del-btn" onclick="event.stopPropagation();deleteFromSheet(${b.ci},'${b.type}','${ds}')">×</button>
                     </div>`;
             }).join('');
         }
@@ -1314,6 +1315,53 @@
         const idx = list.indexOf(ds);
         if(idx>-1){ list.splice(idx,1); saveData(); renderCalendar(); }
         closeDaySheet();
+    }
+
+    // ── Edit booking ──
+    function findTripBounds(ci, type, ds) {
+        const [m, d] = ds.split('-').map(Number);
+        let start = new Date(2026, m, d);
+        let end   = new Date(2026, m, d);
+        // Walk back
+        let cur = new Date(start); cur.setDate(cur.getDate()-1);
+        while(cur.getFullYear()===2026) {
+            const cds=`${cur.getMonth()}-${cur.getDate()}`;
+            if(bookings[ci][type].includes(cds)){ start=new Date(cur); cur.setDate(cur.getDate()-1); } else break;
+        }
+        // Walk forward
+        cur = new Date(end); cur.setDate(cur.getDate()+1);
+        while(cur.getFullYear()===2026) {
+            const cds=`${cur.getMonth()}-${cur.getDate()}`;
+            if(bookings[ci][type].includes(cds)){ end=new Date(cur); cur.setDate(cur.getDate()+1); } else break;
+        }
+        return { start, end };
+    }
+
+    function editBooking(ci, type, ds) {
+        closeDaySheet();
+        const { start, end } = findTripBounds(ci, type, ds);
+        const fmt = d => `2026-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const startStr = fmt(start);
+        const startDs  = `${start.getMonth()}-${start.getDate()}`;
+        editState = { ci, type, oldStart: start, oldEnd: end };
+
+        populateTripCoupleList();
+        // Deselect all, then select only this couple
+        document.querySelectorAll('#tripCoupleList button').forEach(btn => {
+            if(parseInt(btn.dataset.ci)===ci) {
+                btn.dataset.active = '0'; // force toggle on
+                toggleCoupleChip(btn, COUPLE_COLORS[ci % COUPLE_COLORS.length].solid);
+            } else {
+                btn.dataset.active = '1'; // force toggle off
+                toggleCoupleChip(btn, COUPLE_COLORS[parseInt(btn.dataset.ci) % COUPLE_COLORS.length].solid);
+            }
+        });
+        document.getElementById('tripType').value = type;
+        document.getElementById('tripStartDate').value = startStr;
+        document.getElementById('tripEndDate').value   = fmt(end);
+        document.getElementById('tripDescription').value = (labels[ci] && labels[ci][startDs]) || '';
+        document.querySelector('#tripModal .modal-title').textContent = 'Trip bewerken';
+        document.getElementById('tripModal').classList.add('active');
     }
 
     // ── Trip modal ──
@@ -1364,9 +1412,29 @@
         document.getElementById('tripModal').classList.add('active');
     }
 
-    function closeTripModal() { document.getElementById('tripModal').classList.remove('active'); }
+    function closeTripModal() {
+        editState = null;
+        document.querySelector('#tripModal .modal-title').textContent = 'Trip toevoegen';
+        document.getElementById('tripModal').classList.remove('active');
+    }
 
     function saveTrip() {
+        // If editing, delete old range first
+        if(editState) {
+            const { ci, type, oldStart, oldEnd } = editState;
+            const cur = new Date(oldStart);
+            while(cur <= oldEnd) {
+                const ds = `${cur.getMonth()}-${cur.getDate()}`;
+                ['locked','tentative'].forEach(t => {
+                    const idx = bookings[ci][t].indexOf(ds);
+                    if(idx>-1) bookings[ci][t].splice(idx,1);
+                });
+                delete labels[ci][ds];
+                cur.setDate(cur.getDate()+1);
+            }
+            editState = null;
+        }
+        document.querySelector('#tripModal .modal-title').textContent = 'Trip toevoegen';
         const selectedCouples = [...document.querySelectorAll('#tripCoupleList button[data-active="1"]')].map(el=>parseInt(el.dataset.ci));
         const type = document.getElementById('tripType').value;
         const s    = document.getElementById('tripStartDate').value;
