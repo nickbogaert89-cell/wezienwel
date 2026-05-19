@@ -460,16 +460,17 @@
 
         .fuel-balances {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
             margin-bottom: 24px;
         }
 
         .fuel-balance-card {
             background: rgba(0,0,0,0.03);
-            border-radius: 12px;
-            padding: 12px 8px;
+            border-radius: 10px;
+            padding: 10px 4px;
             text-align: center;
+            min-width: 0;
         }
 
         .fuel-balance-name {
@@ -484,9 +485,10 @@
         }
 
         .fuel-balance-amount {
-            font-size: 1rem;
+            font-size: 0.78rem;
             font-weight: 700;
             margin-bottom: 4px;
+            white-space: nowrap;
         }
         .fuel-balance-amount.positive { color: #34A853; }
         .fuel-balance-amount.negative { color: #EA4335; }
@@ -960,12 +962,13 @@
     <div class="modal-sheet">
         <div class="modal-handle"></div>
         <div class="modal-title" id="fuelModalTitle">Rit toevoegen</div>
-        <div class="form-group">
-            <label>Wie</label>
-            <select id="fuelCouple"></select>
+        <div class="form-group" id="fuelPersonGroup">
+            <label id="fuelPersonLabel">Wie reed mee</label>
+            <div id="fuelPersonChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"></div>
+            <select id="fuelPersonSelect" style="display:none;"></select>
         </div>
         <div class="form-group" id="fuelKmGroup">
-            <label>Afstand (km)</label>
+            <label>Afstand (km totaal)</label>
             <input type="number" id="fuelKm" placeholder="bv. 250" min="0">
         </div>
         <div class="form-group" id="fuelNoteGroup" style="display:none;">
@@ -1197,6 +1200,50 @@
     // ── State ──
     const DEFAULT_COUPLES = ['Tobe & Nina','Arne & Margaux','Nick'];
     let couples = [...DEFAULT_COUPLES];
+
+    // Cost-tracker individuals (separate concept from calendar couples)
+    const PEOPLE = ['Nick','Tobe','Nina','Arne','Margaux'];
+    // Legacy couple-idx → person-idx mapping (for old Firestore entries)
+    const COUPLE_TO_PEOPLE   = { 0:[1,2], 1:[3,4], 2:[0] };  // T&N → Tobe,Nina ; A&M → Arne,Margaux ; Nick → Nick
+    const COUPLE_FIRST_PERSON = { 0:1, 1:3, 2:0 };           // first-named member of each couple
+
+    // ── Legacy-aware fuel-entry readers ──
+    function entryParticipants(e) {
+        if (Array.isArray(e.participants) && e.participants.length) return e.participants;
+        if (typeof e.coupleIdx === 'number') return COUPLE_TO_PEOPLE[e.coupleIdx] || [];
+        return [];
+    }
+    // Returns { personIdx: amountPaidByThatPerson } for a refill entry
+    function entryRefillShares(e) {
+        const out = {};
+        if (typeof e.personIdx === 'number') {
+            out[e.personIdx] = e.amount || 0;
+            return out;
+        }
+        if (typeof e.coupleIdx === 'number') {
+            const members = COUPLE_TO_PEOPLE[e.coupleIdx] || [];
+            const share = (e.amount || 0) / Math.max(members.length, 1);
+            members.forEach(p => { out[p] = share; });
+            return out;
+        }
+        return out;
+    }
+    function entryCostPaidBy(e) {
+        if (typeof e.personPaidBy === 'number') return e.personPaidBy;
+        if (typeof e.paidBy === 'number') return COUPLE_FIRST_PERSON[e.paidBy] ?? 0;
+        return 0;
+    }
+    // Returns a 5-element array of percentages aligned with PEOPLE
+    function entryCostSplits(e) {
+        if (Array.isArray(e.splits5) && e.splits5.length === PEOPLE.length) return e.splits5;
+        if (Array.isArray(e.splits) && e.splits.length === 3) {
+            // legacy [T&N, A&M, Nick] → [Nick, T/2, N/2, A/2, M/2]
+            const [tn, am, nk] = e.splits;
+            return [nk, tn/2, tn/2, am/2, am/2];
+        }
+        // Default even split
+        return PEOPLE.map(() => 100/PEOPLE.length);
+    }
     let bookings = {}, labels = {}, shownLevelUps = new Set();
     let currentCalMonth = new Date().getMonth();
     let currentCalYear  = new Date().getFullYear();
@@ -1660,25 +1707,61 @@
         document.getElementById('fuelKmGroup').style.display     = type==='drive'   ? 'block':'none';
         document.getElementById('fuelNoteGroup').style.display   = type==='drive'   ? 'block':'none';
         document.getElementById('fuelAmountGroup').style.display = type==='refill'  ? 'block':'none';
-        document.getElementById('fuelCouple').innerHTML = couples.map((c,i)=>`<option value="${i}">${c}</option>`).join('');
-        if(type==='drive'){ document.getElementById('fuelKm').value=''; document.getElementById('fuelNote').value=''; }
-        else document.getElementById('fuelAmount').value='';
+
+        const chipsBox = document.getElementById('fuelPersonChips');
+        const select   = document.getElementById('fuelPersonSelect');
+        const label    = document.getElementById('fuelPersonLabel');
+        if(type==='drive'){
+            label.textContent = 'Wie reed mee';
+            chipsBox.style.display = 'flex';
+            select.style.display = 'none';
+            chipsBox.innerHTML = PEOPLE.map((p,i)=>`<button type="button" data-pi="${i}" data-active="0"
+                onclick="toggleFuelPersonChip(this)"
+                style="padding:7px 13px;border-radius:999px;border:2px solid #111;
+                       background:transparent;color:#111;font-size:13px;font-weight:600;
+                       cursor:pointer;transition:all 0.15s;">${p}</button>`).join('');
+            document.getElementById('fuelKm').value='';
+            document.getElementById('fuelNote').value='';
+        } else {
+            label.textContent = 'Wie betaalde';
+            chipsBox.style.display = 'none';
+            select.style.display = 'block';
+            select.innerHTML = PEOPLE.map((p,i)=>`<option value="${i}">${p}</option>`).join('');
+            document.getElementById('fuelAmount').value='';
+        }
         document.getElementById('fuelModal').classList.add('active');
     }
     function closeFuelModal() { document.getElementById('fuelModal').classList.remove('active'); }
 
+    function toggleFuelPersonChip(btn) {
+        const active = btn.dataset.active === '1';
+        if(active){
+            btn.dataset.active = '0';
+            btn.style.background = 'transparent';
+            btn.style.color = '#111';
+        } else {
+            btn.dataset.active = '1';
+            btn.style.background = '#111';
+            btn.style.color = '#fff';
+        }
+    }
+
     async function saveFuelEntry() {
-        const ci=parseInt(document.getElementById('fuelCouple').value);
-        let entry={coupleIdx:ci,coupleName:couples[ci],type:currentFuelType,timestamp:firebase.firestore.FieldValue.serverTimestamp(),date:new Date().toISOString()};
+        let entry={type:currentFuelType,timestamp:firebase.firestore.FieldValue.serverTimestamp(),date:new Date().toISOString()};
         if(currentFuelType==='drive'){
+            const parts = [...document.querySelectorAll('#fuelPersonChips button[data-active="1"]')].map(el=>parseInt(el.dataset.pi));
+            if(parts.length===0){ alert('Selecteer minstens 1 deelnemer'); return; }
             const km=parseFloat(document.getElementById('fuelKm').value);
             if(!km||km<=0){ alert('Vul een geldige afstand in'); return; }
-            entry.km=km;
+            entry.participants = parts;
+            entry.km = km;
             const note=document.getElementById('fuelNote').value.trim(); if(note) entry.note=note;
         } else {
+            const pi = parseInt(document.getElementById('fuelPersonSelect').value);
             const amount=parseFloat(document.getElementById('fuelAmount').value);
             if(!amount||amount<=0){ alert('Vul een geldig bedrag in'); return; }
-            entry.amount=amount;
+            entry.personIdx = pi;
+            entry.amount = amount;
         }
         isSavingFuel=true;
         try {
@@ -1697,14 +1780,11 @@
     function openCostModal() {
         document.getElementById('costDesc').value = '';
         document.getElementById('costAmount').value = '';
-        document.getElementById('costPaidBy').innerHTML = couples.map((c,i)=>`<option value="${i}">${c}</option>`).join('');
-        const n = couples.length;
-        const defaultPct = parseFloat((100/n).toFixed(2));
-        document.getElementById('costSplitRows').innerHTML = couples.map((c,i) => {
-            const col = COUPLE_COLORS[i % COUPLE_COLORS.length];
+        document.getElementById('costPaidBy').innerHTML = PEOPLE.map((p,i)=>`<option value="${i}">${p}</option>`).join('');
+        const defaultPct = parseFloat((100/PEOPLE.length).toFixed(2));
+        document.getElementById('costSplitRows').innerHTML = PEOPLE.map((p,i) => {
             return `<div style="display:flex;align-items:center;gap:10px;">
-                <div style="width:10px;height:10px;border-radius:50%;background:${col.solid};flex-shrink:0;"></div>
-                <span style="flex:1;font-size:14px;">${c}</span>
+                <span style="flex:1;font-size:14px;">${p}</span>
                 <input type="number" id="costSplit${i}" value="${defaultPct}" min="0" max="100" step="0.01"
                     oninput="validateSplits()"
                     style="width:70px;border:1.5px solid rgba(0,0,0,0.15);border-radius:8px;padding:6px 8px;font-size:14px;text-align:right;">
@@ -1718,22 +1798,22 @@
     function closeCostModal() { document.getElementById('costModal').classList.remove('active'); }
 
     function validateSplits() {
-        const total = couples.reduce((s,_,i) => s + (parseFloat(document.getElementById(`costSplit${i}`)?.value)||0), 0);
+        const total = PEOPLE.reduce((s,_,i) => s + (parseFloat(document.getElementById(`costSplit${i}`)?.value)||0), 0);
         document.getElementById('costSplitWarning').style.display = Math.abs(total-100) > 0.1 ? 'block' : 'none';
     }
 
     async function saveCostEntry() {
         const desc   = document.getElementById('costDesc').value.trim();
         const amount = parseFloat(document.getElementById('costAmount').value);
-        const paidBy = parseInt(document.getElementById('costPaidBy').value);
-        const splits = couples.map((_,i) => parseFloat(document.getElementById(`costSplit${i}`).value)||0);
-        const total  = splits.reduce((s,v)=>s+v,0);
+        const personPaidBy = parseInt(document.getElementById('costPaidBy').value);
+        const splits5 = PEOPLE.map((_,i) => parseFloat(document.getElementById(`costSplit${i}`).value)||0);
+        const total = splits5.reduce((s,v)=>s+v,0);
 
         if(!desc){ alert('Vul een omschrijving in'); return; }
         if(!amount||amount<=0){ alert('Vul een geldig bedrag in'); return; }
         if(Math.abs(total-100)>0.1){ alert('Verdeling moet optellen tot 100%'); return; }
 
-        const entry = { type:'cost', desc, amount, paidBy, splits, coupleName:couples[paidBy],
+        const entry = { type:'cost', desc, amount, personPaidBy, splits5,
                         date:new Date().toISOString(), timestamp:firebase.firestore.FieldValue.serverTimestamp() };
         isSavingFuel=true;
         try {
@@ -1745,18 +1825,30 @@
 
     function calculateFuelBalances() {
         const km={}, refillPaid={}, costPaid={}, costOwed={};
-        couples.forEach((_,i)=>{ km[i]=0; refillPaid[i]=0; costPaid[i]=0; costOwed[i]=0; });
+        PEOPLE.forEach((_,i)=>{ km[i]=0; refillPaid[i]=0; costPaid[i]=0; costOwed[i]=0; });
         let totalKm=0, totalRefill=0;
         fuelEntries.forEach(e=>{
-            if(e.type==='drive'&&e.km){ km[e.coupleIdx]+=e.km; totalKm+=e.km; }
-            else if(e.type==='refill'&&e.amount){ refillPaid[e.coupleIdx]+=e.amount; totalRefill+=e.amount; }
-            else if(e.type==='cost'&&e.amount){
-                costPaid[e.paidBy]+=e.amount;
-                couples.forEach((_,i)=>{ costOwed[i]+=e.amount*((e.splits?e.splits[i]:(100/couples.length))/100); });
+            if(e.type==='drive' && e.km){
+                const parts = entryParticipants(e);
+                if(parts.length === 0) return;
+                const share = e.km / parts.length;
+                parts.forEach(p => { km[p] += share; });
+                totalKm += e.km;
+            }
+            else if(e.type==='refill' && e.amount){
+                const shares = entryRefillShares(e);
+                Object.entries(shares).forEach(([p, amt]) => { refillPaid[p] += amt; });
+                totalRefill += e.amount;
+            }
+            else if(e.type==='cost' && e.amount){
+                const payer = entryCostPaidBy(e);
+                const splits = entryCostSplits(e);
+                costPaid[payer] += e.amount;
+                PEOPLE.forEach((_,i) => { costOwed[i] += e.amount * ((splits[i] || 0)/100); });
             }
         });
         const balances={};
-        couples.forEach((name,i)=>{
+        PEOPLE.forEach((name,i)=>{
             const kmShare = totalKm>0 ? (km[i]/totalKm)*totalRefill : 0;
             const fuelBal = refillPaid[i] - kmShare;
             const costBal = costPaid[i] - costOwed[i];
@@ -1767,12 +1859,12 @@
 
     function renderFuelTracker() {
         const b=calculateFuelBalances();
-        document.getElementById('fuelBalances').innerHTML=couples.map((name,i)=>{
+        document.getElementById('fuelBalances').innerHTML=PEOPLE.map((name,i)=>{
             const bl=b[i], sign=bl.balance>=0?'+':'';
             return `<div class="fuel-balance-card">
                 <div class="fuel-balance-name">${name}</div>
-                <div class="fuel-balance-amount ${bl.balance>=0?'positive':'negative'}">${sign}€${bl.balance.toFixed(2)}</div>
-                <div class="fuel-balance-details">${bl.km.toFixed(0)} km · €${bl.paid.toFixed(2)} betaald</div>
+                <div class="fuel-balance-amount ${bl.balance>=0?'positive':'negative'}">${sign}€${bl.balance.toFixed(0)}</div>
+                <div class="fuel-balance-details">${bl.km.toFixed(0)} km · €${bl.paid.toFixed(0)}</div>
             </div>`;
         }).join('');
 
@@ -1784,11 +1876,20 @@
             const items=fuelHistoryExpanded?fuelEntries:fuelEntries.slice(0,3);
             hist.innerHTML=items.map(entry=>{
                 const date=entry.date?new Date(entry.date).toLocaleDateString('nl-BE'):'';
-                const info=entry.type==='drive'
-                    ?`🚗 ${entry.coupleName} — ${entry.km} km${entry.note?' · '+entry.note:''}`
-                    :entry.type==='cost'
-                    ?`🔧 ${entry.desc} — €${entry.amount?.toFixed(2)} (betaald door ${entry.coupleName})`
-                    :`⛽ ${entry.coupleName} — €${entry.amount?.toFixed(2)}`;
+                let info;
+                if(entry.type==='drive'){
+                    const parts = entryParticipants(entry);
+                    const who = parts.length ? parts.map(p=>PEOPLE[p]).join(', ') : (entry.coupleName||'?');
+                    info = `🚗 ${who} — ${entry.km} km${entry.note?' · '+entry.note:''}`;
+                } else if(entry.type==='cost'){
+                    const payer = PEOPLE[entryCostPaidBy(entry)] || entry.coupleName || '?';
+                    info = `🔧 ${entry.desc} — €${entry.amount?.toFixed(2)} (${payer})`;
+                } else {
+                    const shares = entryRefillShares(entry);
+                    const payerIdxs = Object.keys(shares);
+                    const who = payerIdxs.length ? payerIdxs.map(p=>PEOPLE[p]).join(', ') : (entry.coupleName||'?');
+                    info = `⛽ ${who} — €${entry.amount?.toFixed(2)}`;
+                }
                 return `<div class="fuel-history-item">
                     <div class="fuel-history-info">
                         <div class="fuel-history-type">${info}</div>
