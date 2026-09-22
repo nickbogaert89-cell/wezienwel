@@ -1288,17 +1288,17 @@
     }
 
     function renderCoupleLegend() {
-        const today = new Date();
+        const today = new Date(); today.setHours(0,0,0,0);
         document.getElementById('coupleLegend').innerHTML = couples.map((name, ci) => {
             const col = COUPLE_COLORS[ci % COUPLE_COLORS.length];
-            const locked = bookings[ci]?.locked || [];
-            const tent = (bookings[ci]?.tentative||[]).length;
-            let future = 0;
-            locked.forEach(k => {
+            // Count only today and future days for both "gepland" and "misschien"
+            const countFuture = list => list.filter(k => {
                 const p=k.split('-').map(Number);
                 const [y,m,d] = p.length===3 ? p : [2026,...p];
-                if(new Date(y,m,d)>=today) future++;
-            });
+                return new Date(y,m,d)>=today;
+            }).length;
+            const future = countFuture(bookings[ci]?.locked || []);
+            const tent   = countFuture(bookings[ci]?.tentative || []);
             return `
                 <div class="couple-legend-row" onclick="editCoupleNameInline(${ci}, event)">
                     <div class="couple-color-swatch" style="background:${col.solid}"></div>
@@ -1411,9 +1411,26 @@
     function closeDaySheet() { document.getElementById('daySheet').classList.remove('active'); }
 
     function deleteFromSheet(ci, type, ds) {
+        // Remove the whole trip (all connected days), not just the tapped day
+        const { start, end } = findTripBounds(ci, type, ds);
+        const same = start.getTime()===end.getTime();
+        const range = same
+            ? `${start.getDate()} ${MONTHS[start.getMonth()]}`
+            : start.getMonth()===end.getMonth()
+                ? `${start.getDate()}–${end.getDate()} ${MONTHS[end.getMonth()]}`
+                : `${start.getDate()} ${MONTHS[start.getMonth()]} – ${end.getDate()} ${MONTHS[end.getMonth()]}`;
+        if(!confirm(`Trip ${range} verwijderen?`)) return;
         const list = bookings[ci][type];
-        const idx = list.indexOf(ds);
-        if(idx>-1){ list.splice(idx,1); saveData(); renderCalendar(); }
+        const cur = new Date(start);
+        while(cur <= end) {
+            const k = `${cur.getFullYear()}-${cur.getMonth()}-${cur.getDate()}`;
+            const idx = list.indexOf(k);
+            if(idx>-1) list.splice(idx,1);
+            delete labels[ci][k];
+            shownLevelUps.delete(k);
+            cur.setDate(cur.getDate()+1);
+        }
+        saveData(); renderCalendar();
         closeDaySheet();
     }
 
@@ -1523,7 +1540,7 @@
             const { ci, type, oldStart, oldEnd } = editState;
             const cur = new Date(oldStart);
             while(cur <= oldEnd) {
-                const ds = `${cur.getMonth()}-${cur.getDate()}`;
+                const ds = `${cur.getFullYear()}-${cur.getMonth()}-${cur.getDate()}`;
                 ['locked','tentative'].forEach(t => {
                     const idx = bookings[ci][t].indexOf(ds);
                     if(idx>-1) bookings[ci][t].splice(idx,1);
