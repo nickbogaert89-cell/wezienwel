@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Schade · We Zien Wel</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDP7r5vwsOX3IqU2g_IilbCDl5sPepH_A0",
+            authDomain: "wezienwel.firebaseapp.com",
+            projectId: "wezienwel",
+            storageBucket: "wezienwel.firebasestorage.app",
+            messagingSenderId: "119572340376",
+            appId: "1:119572340376:web:4908690b8d488bf306baed"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            background: #f4f4f2;
+            color: #1a1a1a;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        /* ─── HEADER ─── */
+        .app-header {
+            padding: 52px 20px 22px;
+            background: #fff;
+            border-bottom: 1px solid rgba(0,0,0,0.07);
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .back-btn {
+            border: 1px solid rgba(0,0,0,0.18);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #1a1a1a;
+            text-decoration: none;
+        }
+        .back-btn:active { background: rgba(0,0,0,0.07); }
+
+        .app-title {
+            font-size: 1.9rem;
+            font-style: italic;
+            font-weight: 400;
+            text-transform: lowercase;
+            letter-spacing: 0.07em;
+            line-height: 1;
+        }
+
+        /* ─── OVERVIEW ─── */
+        .content { padding: 22px 20px 100px; }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .summary-card {
+            background: #fff;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 12px 6px;
+            text-align: center;
+            cursor: pointer;
+            font-family: inherit;
+            color: inherit;
+            min-width: 0;
+        }
+        .summary-card.active { border-color: #1a1a1a; }
+
+        .summary-label {
+            font-size: 0.45rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: rgba(0,0,0,0.42);
+            line-height: 1.5;
+            min-height: 3em;
+            margin-bottom: 4px;
+        }
+
+        .summary-amount {
+            font-size: 0.9rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .summary-count {
+            font-size: 0.42rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: rgba(0,0,0,0.36);
+            margin-top: 4px;
+        }
+
+        .summary-hint {
+            font-size: 0.45rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(0,0,0,0.3);
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .text-todo  { color: #EA4335; }
+        .text-sale  { color: #C98A00; }
+        .text-fixed { color: #34A853; }
+
+        .list-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(0,0,0,0.36);
+            margin-bottom: 10px;
+        }
+
+        .list-reset {
+            background: none;
+            border: none;
+            font-family: inherit;
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #1a1a1a;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .damage-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        .damage-item:active { background: #fafafa; }
+
+        .damage-thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: rgba(0,0,0,0.05);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.42rem;
+            text-transform: uppercase;
+            color: rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .damage-info { flex: 1; min-width: 0; }
+
+        .damage-desc {
+            font-size: 0.66rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .damage-meta {
+            font-size: 0.46rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: rgba(0,0,0,0.42);
+            line-height: 1.6;
+        }
+
+        .damage-right { text-align: right; flex-shrink: 0; }
+
+        .damage-amount {
+            font-size: 0.72rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            font-size: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 3px 7px;
+            border-radius: 20px;
+            color: #fff;
+            white-space: nowrap;
+        }
+        .status-todo  { background: #EA4335; }
+        .status-sale  { background: #C98A00; }
+        .status-fixed { background: #34A853; }
+
+        .empty-msg {
+            font-size: 0.62rem;
+            color: rgba(0,0,0,0.36);
+            padding: 24px 0;
+            text-align: center;
+        }
+
+        /* ─── FAB ─── */
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 20px;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: #1a1a1a;
+            color: #fff;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.28);
+            transition: transform 0.15s;
+        }
+        .fab:active { transform: scale(0.92); }
+
+        /* ─── MODAL BOTTOM SHEET ─── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 500;
+            display: none;
+            align-items: flex-end;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal-sheet {
+            background: #fff;
+            border-radius: 20px 20px 0 0;
+            padding: 16px 20px 50px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-handle {
+            width: 36px;
+            height: 4px;
+            background: rgba(0,0,0,0.11);
+            border-radius: 2px;
+            margin: 0 auto 18px;
+        }
+
+        .modal-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .form-group { margin-bottom: 14px; }
+
+        .form-group label {
+            display: block;
+            font-size: 0.52rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(0,0,0,0.42);
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(0,0,0,0.14);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.8rem;
+            background: #fafafa;
+            color: #1a1a1a;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .form-group textarea { min-height: 76px; resize: vertical; }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: rgba(0,0,0,0.38);
+            background: #fff;
+        }
+
+        .form-row { display: flex; gap: 10px; }
+        .form-row .form-group { flex: 1; min-width: 0; }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .photo-tile {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(0,0,0,0.05);
+        }
+        .photo-tile img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            cursor: zoom-in;
+        }
+
+        .photo-remove {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            border: none;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .photo-add {
+            aspect-ratio: 1;
+            border: 1px dashed rgba(0,0,0,0.25);
+            border-radius: 8px;
+            background: transparent;
+            font-family: inherit;
+            font-size: 1.3rem;
+            color: rgba(0,0,0,0.4);
+            cursor: pointer;
+        }
+
+        .photo-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.42rem;
+            text-transform: uppercase;
+            color: rgba(0,0,0,0.35);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-modal-cancel {
+            flex: 1;
+            padding: 13px;
+            font-family: inherit;
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            background: transparent;
+            color: #1a1a1a;
+            border: 1px solid rgba(0,0,0,0.18);
+            border-radius: 10px;
+        }
+
+        .btn-modal-primary {
+            flex: 2;
+            padding: 13px;
+            font-family: inherit;
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            background: #1a1a1a;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+        }
+        .btn-modal-primary:disabled { background: rgba(0,0,0,0.18); cursor: not-allowed; }
+
+        .btn-delete {
+            display: block;
+            width: 100%;
+            margin-top: 16px;
+            padding: 10px;
+            background: none;
+            border: none;
+            font-family: inherit;
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #EA4335;
+            cursor: pointer;
+        }
+
+        /* ─── LIGHTBOX ─── */
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 900;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .lightbox.active { display: flex; }
+        .lightbox img { max-width: 100%; max-height: 100%; border-radius: 6px; }
+    </style>
+</head>
+<body>
+
+<!-- ─── HEADER ─── -->
+<header class="app-header">
+    <div class="header-top">
+        <a class="back-btn" href="./" aria-label="Terug">←</a>
+        <div class="app-title">schade</div>
+    </div>
+</header>
+
+<!-- ─── OVERVIEW ─── -->
+<main class="content">
+    <div class="summary" id="summary"></div>
+    <div class="summary-hint">Tik op een status om te filteren</div>
+    <div class="list-title" id="listTitle"></div>
+    <div id="damageList"><div class="empty-msg">Laden…</div></div>
+</main>
+
+<button class="fab" onclick="openForm()" aria-label="Schade melden">+</button>
+
+<!-- ─── FORM ─── -->
+<div class="modal-overlay" id="damageModal">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title" id="formTitle">Schade melden</div>
+        <div class="form-group">
+            <label>Foto's</label>
+            <div class="photo-grid" id="photoGrid"></div>
+            <input type="file" id="photoInput" accept="image/*" multiple hidden onchange="handlePhotoFiles(this.files)">
+        </div>
+        <div class="form-group">
+            <label>Beschrijving</label>
+            <textarea id="damageDesc" placeholder="bv. Kras op de zijdeur rechts"></textarea>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Datum</label>
+                <input type="date" id="damageDate">
+            </div>
+            <div class="form-group">
+                <label>Geschatte schade (€)</label>
+                <input type="number" id="damageAmount" placeholder="bv. 350" min="0" step="1" inputmode="decimal">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Status</label>
+            <select id="damageStatus"></select>
+        </div>
+        <div class="form-group">
+            <label>Verantwoordelijke</label>
+            <select id="damageResponsible"></select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-modal-cancel" onclick="closeForm()">Annuleren</button>
+            <button class="btn-modal-primary" id="btnSaveDamage" onclick="saveReport()">Opslaan</button>
+        </div>
+        <button class="btn-delete" id="btnDeleteDamage" onclick="deleteReport()">Melding verwijderen</button>
+    </div>
+</div>
+
+<!-- ─── LIGHTBOX ─── -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img id="lightboxImg" alt="">
+</div>
+
+<script>
+    // ── Constants ──
+    const PEOPLE = ['Nick','Tobe','Nina','Arne','Margaux'];
+    const RESPONSIBLE = [...PEOPLE, 'Onbekend'];
+    const STATUSES = [
+        { key:'todo',  label:'Nog te repareren' },
+        { key:'sale',  label:'Zo laten tot verkoop' },
+        { key:'fixed', label:'Gerepareerd' },
+    ];
+    const REPORTS = db.collection('wezienwel_damage');
+    const PHOTOS  = db.collection('wezienwel_damage_photos');
+
+    // ── State ──
+    let reports = [], filter = null;
+    let editing = null, formPhotos = [], removedPhotoIds = [], formToken = 0, isSaving = false;
+
+    // ── Helpers ──
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const statusLabel = k => (STATUSES.find(s => s.key===k) || STATUSES[0]).label;
+    const fmtAmount = n => '€' + Math.round(n || 0).toLocaleString('nl-BE');
+    function fmtDate(iso) {
+        if(!iso) return '';
+        const [y,m,d] = iso.split('-').map(Number);
+        return new Date(y, m-1, d).toLocaleDateString('nl-BE', { day:'numeric', month:'short', year:'numeric' });
+    }
+    function todayIso() {
+        const t = new Date();
+        return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+    }
+    const createdMs = r => r.createdAt?.toMillis ? r.createdAt.toMillis() : Date.now();
+
+    // ── Images ──
+    // Phone photos are 3–5 MB; a Firestore document holds at most 1 MB, so shrink before saving.
+    function loadImage(src) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = src;
+        });
+    }
+    async function resizeToDataUrl(src, maxSize, quality) {
+        const img = await loadImage(src);
+        const scale = Math.min(1, maxSize / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.round(img.naturalWidth * scale), h = Math.round(img.naturalHeight * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        return canvas.toDataURL('image/jpeg', quality);
+    }
+    async function compressImage(file) {
+        const url = URL.createObjectURL(file);
+        try {
+            let out = await resizeToDataUrl(url, 1280, 0.72);
+            if(out.length > 700*1024) out = await resizeToDataUrl(url, 1024, 0.6);
+            return out;
+        } finally { URL.revokeObjectURL(url); }
+    }
+    const makeThumb = src => resizeToDataUrl(src, 240, 0.6);
+
+    // ── Overview ──
+    function toggleFilter(key) { filter = filter===key ? null : key; render(); }
+
+    function render() {
+        document.getElementById('summary').innerHTML = STATUSES.map(s => {
+            const items = reports.filter(r => r.status===s.key);
+            const total = items.reduce((t,r) => t + (r.amount || 0), 0);
+            return `<button class="summary-card ${filter===s.key ? 'active' : ''}" onclick="toggleFilter('${s.key}')">
+                <div class="summary-label">${s.label}</div>
+                <div class="summary-amount text-${s.key}">${fmtAmount(total)}</div>
+                <div class="summary-count">${items.length} ${items.length===1 ? 'melding' : 'meldingen'}</div>
+            </button>`;
+        }).join('');
+
+        const shown = reports
+            .filter(r => !filter || r.status===filter)
+            .sort((a,b) => (b.date||'').localeCompare(a.date||'') || createdMs(b) - createdMs(a));
+
+        document.getElementById('listTitle').innerHTML = filter
+            ? `<span>${statusLabel(filter)} (${shown.length})</span><button class="list-reset" onclick="toggleFilter(null)">Toon alles</button>`
+            : `<span>Alle meldingen (${shown.length})</span>`;
+
+        const list = document.getElementById('damageList');
+        if(shown.length === 0) {
+            list.innerHTML = `<div class="empty-msg">${filter ? 'Geen meldingen met deze status' : 'Nog geen schade gemeld 🎉'}</div>`;
+            return;
+        }
+        list.innerHTML = shown.map(r => {
+            const n = (r.photoIds || []).length;
+            const thumb = r.thumb
+                ? `<img class="damage-thumb" src="${r.thumb}" alt="">`
+                : `<div class="damage-thumb">geen foto</div>`;
+            return `<div class="damage-item" onclick="openForm('${r.id}')">
+                ${thumb}
+                <div class="damage-info">
+                    <div class="damage-desc">${esc(r.desc)}</div>
+                    <div class="damage-meta">${fmtDate(r.date)} · ${esc(r.responsible || 'Onbekend')}${n > 1 ? ` · ${n} foto's` : ''}</div>
+                </div>
+                <div class="damage-right">
+                    <div class="damage-amount">${r.amount != null ? fmtAmount(r.amount) : '€ ?'}</div>
+                    <span class="status-badge status-${esc(r.status)}">${statusLabel(r.status)}</span>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── Form ──
+    async function openForm(id) {
+        const token = ++formToken;
+        editing = id ? reports.find(r => r.id===id) || null : null;
+        formPhotos = []; removedPhotoIds = [];
+
+        document.getElementById('formTitle').textContent = editing ? 'Schade bewerken' : 'Schade melden';
+        document.getElementById('damageDesc').value   = editing?.desc || '';
+        document.getElementById('damageDate').value   = editing?.date || todayIso();
+        document.getElementById('damageDate').max     = todayIso();
+        document.getElementById('damageAmount').value = editing?.amount != null ? editing.amount : '';
+        document.getElementById('damageStatus').innerHTML = STATUSES.map(s =>
+            `<option value="${s.key}" ${(editing?.status || 'todo')===s.key ? 'selected' : ''}>${s.label}</option>`).join('');
+        document.getElementById('damageResponsible').innerHTML = RESPONSIBLE.map(p =>
+            `<option value="${p}" ${(editing?.responsible || 'Onbekend')===p ? 'selected' : ''}>${p}</option>`).join('');
+        document.getElementById('btnDeleteDamage').style.display = editing ? 'block' : 'none';
+        document.getElementById('damageModal').classList.add('active');
+
+        const pending = editing?.photoIds?.length || 0;
+        renderFormPhotos(pending);
+        if(!pending) return;
+
+        // Full-size photos are only loaded when a report is opened
+        try {
+            const snap = await PHOTOS.where('reportId', '==', editing.id).get();
+            if(token !== formToken) return;  // form was closed or another report opened meanwhile
+            const byId = {};
+            snap.forEach(d => { byId[d.id] = d.data().src; });
+            formPhotos = editing.photoIds.filter(pid => byId[pid]).map(pid => ({ id: pid, src: byId[pid] }));
+            renderFormPhotos();
+        } catch(e) {
+            if(token === formToken) alert('Kon foto\'s niet laden: ' + e.message);
+        }
+    }
+
+    function closeForm() {
+        formToken++;
+        editing = null;
+        document.getElementById('damageModal').classList.remove('active');
+    }
+
+    function renderFormPhotos(loadingCount = 0) {
+        const tiles = formPhotos.map((p, i) => `<div class="photo-tile">
+                <img src="${p.src}" alt="" onclick="openLightbox(${i})">
+                <button class="photo-remove" onclick="removeFormPhoto(${i})" aria-label="Foto verwijderen">×</button>
+            </div>`);
+        for(let i=0; i<loadingCount; i++) tiles.push('<div class="photo-tile photo-loading">laden…</div>');
+        tiles.push(`<button class="photo-add" onclick="document.getElementById('photoInput').click()" aria-label="Foto toevoegen">+</button>`);
+        document.getElementById('photoGrid').innerHTML = tiles.join('');
+    }
+
+    async function handlePhotoFiles(files) {
+        const list = [...files].filter(f => f.type.startsWith('image/'));
+        document.getElementById('photoInput').value = '';
+        for(const f of list) {
+            try {
+                formPhotos.push({ src: await compressImage(f) });
+                renderFormPhotos();
+            } catch(e) { alert('Kon foto niet laden'); }
+        }
+    }
+
+    function removeFormPhoto(i) {
+        const [p] = formPhotos.splice(i, 1);
+        if(p?.id) removedPhotoIds.push(p.id);
+        renderFormPhotos();
+    }
+
+    async function saveReport() {
+        if(isSaving) return;
+        const desc        = document.getElementById('damageDesc').value.trim();
+        const date        = document.getElementById('damageDate').value;
+        const amountRaw   = document.getElementById('damageAmount').value.trim();
+        const status      = document.getElementById('damageStatus').value;
+        const responsible = document.getElementById('damageResponsible').value;
+        const amount      = amountRaw === '' ? null : parseFloat(amountRaw.replace(',', '.'));
+
+        if(!desc){ alert('Vul een beschrijving in'); return; }
+        if(!date){ alert('Kies een datum'); return; }
+        if(amount !== null && (isNaN(amount) || amount < 0)){ alert('Vul een geldig bedrag in'); return; }
+
+        const btn = document.getElementById('btnSaveDamage');
+        isSaving = true; btn.disabled = true; btn.textContent = 'Opslaan…';
+        try {
+            const ref = editing ? REPORTS.doc(editing.id) : REPORTS.doc();
+            for(const pid of removedPhotoIds) await PHOTOS.doc(pid).delete();
+            removedPhotoIds = [];
+            const photoIds = [];
+            for(const p of formPhotos) {
+                if(!p.id) {
+                    const pref = await PHOTOS.add({ reportId: ref.id, src: p.src, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                    p.id = pref.id;  // so a retry after an error doesn't upload it twice
+                }
+                photoIds.push(p.id);
+            }
+            const thumb = formPhotos.length ? await makeThumb(formPhotos[0].src) : null;
+            const data = { desc, date, amount, status, responsible, photoIds, thumb,
+                           updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+            if(editing) await ref.update(data);
+            else await ref.set({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            closeForm();
+        } catch(e) {
+            alert('Error: ' + e.message);
+        } finally {
+            isSaving = false; btn.disabled = false; btn.textContent = 'Opslaan';
+        }
+    }
+
+    async function deleteReport() {
+        if(!editing || !confirm('Deze schademelding verwijderen?')) return;
+        try {
+            const snap = await PHOTOS.where('reportId', '==', editing.id).get();
+            await Promise.all(snap.docs.map(d => d.ref.delete()));
+            await REPORTS.doc(editing.id).delete();
+            closeForm();
+        } catch(e) { alert('Error: ' + e.message); }
+    }
+
+    // ── Lightbox ──
+    function openLightbox(i) {
+        document.getElementById('lightboxImg').src = formPhotos[i].src;
+        document.getElementById('lightbox').classList.add('active');
+    }
+    function closeLightbox() { document.getElementById('lightbox').classList.remove('active'); }
+
+    // Close form on overlay tap
+    document.getElementById('damageModal').addEventListener('click', e => {
+        if(e.target === document.getElementById('damageModal')) closeForm();
+    });
+
+    // ── Boot ──
+    REPORTS.onSnapshot(snap => {
+        reports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        render();
+    }, e => {
+        document.getElementById('damageList').innerHTML = `<div class="empty-msg">Kon schade niet laden: ${esc(e.message)}</div>`;
+    });
+</script>
+</body>
+</html>
