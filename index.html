@@ -556,6 +556,19 @@
             width: 100%;
         }
 
+        .damage-link {
+            display: block;
+            width: fit-content;
+            margin: 36px auto 0;
+            padding: 6px 10px;
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(0,0,0,0.36);
+            text-decoration: none;
+        }
+        .damage-link:active { color: #1a1a1a; }
+
         /* ─── FAB ─── */
         .fab {
             position: fixed;
@@ -904,6 +917,7 @@
     <div class="fuel-history-title">Geschiedenis</div>
     <div id="fuelHistory"></div>
     <button class="fuel-history-toggle" id="fuelHistoryToggle" onclick="toggleFuelHistory()" style="display:none;">Toon meer</button>
+    <a class="damage-link" href="schade.html">Schade →</a>
 </div>
 
 <!-- ─── DAY BOTTOM SHEET ─── -->
